@@ -62,8 +62,8 @@ export default function Navbar() {
           <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="relative flex items-center h-16 md:h-[72px]">
-              {/* Logo - right side */}
+            <div className="relative flex items-center justify-between h-16 md:h-[72px]">
+              {/* Logo — right side (RTL start) */}
               <Link to="/Home" className="group shrink-0">
                 <img
                   src="/images/general/logo-full.png"
@@ -72,7 +72,7 @@ export default function Navbar() {
                 />
               </Link>
 
-              {/* Desktop nav links - absolutely centered */}
+              {/* Desktop nav links — absolutely centered */}
               <div className="hidden lg:flex items-center gap-0.5 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                 {navLinks.map((link) => (
                   <Link key={link.path} to={link.path} className={linkClass(link.path)}>
@@ -81,17 +81,20 @@ export default function Navbar() {
                 ))}
               </div>
 
-              {/* Actions */}
-              <div className="hidden md:flex lg:hidden items-center gap-2" />
+              {/* Actions — left side (RTL end). Visual order right->left:
+                  theme | cart | phone                                    */}
               <div className="hidden md:flex items-center gap-2">
-                <a
-                  href="tel:1700700464"
-                  className="flex items-center gap-2 text-primary font-medium text-sm hover:text-primary/80 transition-colors"
+                <button
+                  onClick={toggleTheme}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-foreground/50 hover:text-primary transition-all"
+                  aria-label={theme === "dark" ? "מעבר למצב יום" : "מעבר למצב לילה"}
                 >
-                  <Phone className="w-4 h-4" />
-                  <span className="hidden xl:inline">1700-700-464</span>
-                </a>
-                <div className="w-px h-5 bg-primary/15 mx-1" />
+                  {theme === "dark" ? (
+                    <Sun className="w-[18px] h-[18px]" />
+                  ) : (
+                    <Moon className="w-[18px] h-[18px]" />
+                  )}
+                </button>
                 <button
                   onClick={() => setCartOpen(true)}
                   className="relative w-9 h-9 rounded-full flex items-center justify-center text-foreground/50 hover:text-primary transition-all"
@@ -104,17 +107,14 @@ export default function Navbar() {
                     </span>
                   )}
                 </button>
-                <button
-                  onClick={toggleTheme}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-foreground/50 hover:text-primary transition-all"
-                  aria-label={theme === "dark" ? "מעבר למצב יום" : "מעבר למצב לילה"}
+                <div className="w-px h-5 bg-primary/15 mx-1" />
+                <a
+                  href="tel:1700700464"
+                  className="flex items-center gap-2 text-primary font-medium text-sm hover:text-primary/80 transition-colors"
                 >
-                  {theme === "dark" ? (
-                    <Sun className="w-[18px] h-[18px]" />
-                  ) : (
-                    <Moon className="w-[18px] h-[18px]" />
-                  )}
-                </button>
+                  <Phone className="w-4 h-4" />
+                  <span className="hidden xl:inline">1700-700-464</span>
+                </a>
               </div>
 
               {/* Mobile */}
