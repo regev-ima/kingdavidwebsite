@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Phone, ShoppingCart } from "lucide-react";
+import { Menu, X, Phone, ShoppingCart, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/lib/CartContext";
+import { useTheme } from "@/lib/ThemeContext";
 import CartDrawer from "@/components/shop/CartDrawer";
 
 const navLinks = [
@@ -22,6 +23,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const { cartCount } = useCart();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -82,6 +84,14 @@ export default function Navbar() {
               {/* Actions */}
               <div className="hidden md:flex lg:hidden items-center gap-2" />
               <div className="hidden md:flex items-center gap-2">
+                <a
+                  href="tel:1700700464"
+                  className="flex items-center gap-2 text-primary font-medium text-sm hover:text-primary/80 transition-colors"
+                >
+                  <Phone className="w-4 h-4" />
+                  <span className="hidden xl:inline">1700-700-464</span>
+                </a>
+                <div className="w-px h-5 bg-primary/15 mx-1" />
                 <button
                   onClick={() => setCartOpen(true)}
                   className="relative w-9 h-9 rounded-full flex items-center justify-center text-foreground/50 hover:text-primary transition-all"
@@ -94,14 +104,17 @@ export default function Navbar() {
                     </span>
                   )}
                 </button>
-                <div className="w-px h-5 bg-primary/15 mx-1" />
-                <a
-                  href="tel:1700700464"
-                  className="flex items-center gap-2 text-primary font-medium text-sm hover:text-primary/80 transition-colors"
+                <button
+                  onClick={toggleTheme}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-foreground/50 hover:text-primary transition-all"
+                  aria-label={theme === "dark" ? "מעבר למצב יום" : "מעבר למצב לילה"}
                 >
-                  <Phone className="w-4 h-4" />
-                  <span className="hidden xl:inline">1700-700-464</span>
-                </a>
+                  {theme === "dark" ? (
+                    <Sun className="w-[18px] h-[18px]" />
+                  ) : (
+                    <Moon className="w-[18px] h-[18px]" />
+                  )}
+                </button>
               </div>
 
               {/* Mobile */}
