@@ -1,14 +1,21 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Eye, Plus, ArrowLeft } from "lucide-react";
+import { Eye, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { computeEffectivePrice } from "@/lib/pricing";
+import SaleCountdown from "@/components/shop/SaleCountdown";
 
 export default function ProductCard({ product, index }) {
   const [hovered, setHovered] = useState(false);
-  const discount = product.sale_price && product.price
-    ? Math.round(((product.price - product.sale_price) / product.price) * 100)
-    : 0;
+
+  // Pick the default variation (or first) so the card price reflects
+  // the same variation the detail page opens to.
+  const defaultVariation =
+    product?.variations?.find((v) => v.id === product?.default_variation_id) ||
+    product?.variations?.[0] ||
+    null;
+  const pricing = computeEffectivePrice(product, defaultVariation);
 
   return (
     <motion.article
@@ -45,13 +52,16 @@ export default function ProductCard({ product, index }) {
 
             {/* Top-right: badges */}
             <div className="absolute top-3 right-3 flex flex-col gap-2 items-end z-10">
-              {discount > 0 && (
+              {pricing.badgeLabel && (
                 <Badge className="bg-destructive text-destructive-foreground font-bold text-xs px-2.5 py-1 tracking-wide shadow-lg">
-                  -{discount}%
+                  {pricing.badgeLabel}
                 </Badge>
               )}
-              {product.is_on_sale && !discount && (
+              {pricing.isOnSaleNow && !pricing.badgeLabel && (
                 <Badge className="bg-destructive text-destructive-foreground text-xs px-2.5 py-1">מבצע</Badge>
+              )}
+              {pricing.saleEndsAt && pricing.isOnSaleNow && (
+                <SaleCountdown endsAt={pricing.saleEndsAt} compact />
               )}
             </div>
 
@@ -122,18 +132,18 @@ export default function ProductCard({ product, index }) {
             {/* Price row */}
             <div className="flex items-end justify-between pt-2">
               <div className="flex items-baseline gap-2 flex-wrap">
-                {product.sale_price ? (
+                {pricing.isOnSaleNow ? (
                   <>
                     <span className="text-2xl font-cormorant font-semibold text-primary leading-none">
-                      ₪{product.sale_price.toLocaleString()}
+                      ₪{pricing.finalPrice.toLocaleString()}
                     </span>
                     <span className="text-sm text-muted-foreground line-through">
-                      ₪{product.price.toLocaleString()}
+                      ₪{pricing.originalPrice.toLocaleString()}
                     </span>
                   </>
-                ) : product.price ? (
+                ) : pricing.finalPrice > 0 ? (
                   <span className="text-2xl font-cormorant font-semibold text-primary leading-none">
-                    ₪{product.price.toLocaleString()}
+                    ₪{pricing.finalPrice.toLocaleString()}
                   </span>
                 ) : (
                   <span className="text-sm text-muted-foreground">צור קשר לתמחור</span>

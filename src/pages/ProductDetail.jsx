@@ -13,6 +13,8 @@ import StickyAddToCart from "@/components/shop/StickyAddToCart";
 import { fallbackProducts } from "@/data/fallbackProducts";
 import ProductReviewsCarousel from "@/components/shop/ProductReviewsCarousel";
 import { motion } from "framer-motion";
+import { computeEffectivePrice } from "@/lib/pricing";
+import SaleCountdown from "@/components/shop/SaleCountdown";
 
 // Estimated delivery date (14 business days from now, updated)
 function getEstimatedDelivery() {
@@ -72,7 +74,6 @@ export default function ProductDetail() {
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [fomoTimer, setFomoTimer] = useState(null);
   const ctaRef = useRef(null);
 
   const { data: apiProduct, isLoading } = useQuery({
@@ -129,40 +130,37 @@ export default function ProductDetail() {
     return imgs;
   }, [product]);
 
-  const discount = product?.sale_price && product?.price
-    ? Math.round(((product.price - product.sale_price) / product.price) * 100) : 0;
+  // Resolve the variation the UI currently shows (by size) so that
+  // computeEffectivePrice works against the right row. Falls back to the
+  // product's default variation, then the first one.
+  const selectedVariation = useMemo(() => {
+    if (!product?.variations?.length) return null;
+    const match =
+      product.variations.find((v) => v.name === selectedSize) ||
+      product.variations.find(
+        (v) => v.width_cm && v.length_cm && `${v.width_cm}x${v.length_cm}` === selectedSize
+      );
+    if (match) return match;
+    if (product.default_variation_id) {
+      const def = product.variations.find((v) => v.id === product.default_variation_id);
+      if (def) return def;
+    }
+    return product.variations[0];
+  }, [product, selectedSize]);
+
+  const pricing = useMemo(
+    () => computeEffectivePrice(product || {}, selectedVariation),
+    [product, selectedVariation]
+  );
+
+  const discount = pricing.isOnSaleNow && pricing.originalPrice > 0
+    ? Math.round(((pricing.originalPrice - pricing.finalPrice) / pricing.originalPrice) * 100)
+    : 0;
 
   const isBed = product?.category?.includes("מיטות");
 
-  // FOMO countdown timer for sale products (30 minutes)
-  useEffect(() => {
-    if (!product?.is_on_sale) return;
-    // Check localStorage for existing timer
-    const key = `fomo_${product.id}`;
-    let endTime = localStorage.getItem(key);
-    if (!endTime) {
-      endTime = Date.now() + 30 * 60 * 1000; // 30 minutes
-      localStorage.setItem(key, endTime);
-    }
-    endTime = Number(endTime);
-
-    const tick = () => {
-      const remaining = Math.max(0, endTime - Date.now());
-      if (remaining <= 0) {
-        // Reset timer when it reaches 0
-        const newEnd = Date.now() + 30 * 60 * 1000;
-        localStorage.setItem(key, newEnd);
-        setFomoTimer({ m: 30, s: 0 });
-      } else {
-        const m = Math.floor(remaining / 60000);
-        const s = Math.floor((remaining % 60000) / 1000);
-        setFomoTimer({ m, s });
-      }
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [product]);
+  // Replaced by <SaleCountdown endsAt={pricing.saleEndsAt} /> above —
+  // it reads the real CRM sale window instead of a local 30-min gimmick.
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -257,19 +255,46 @@ export default function ProductDetail() {
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">{product.name}</h1>
 
             {/* Price */}
-            <div className="flex items-center gap-3 mb-5">
-              {product.sale_price ? (
-                <>
-                  <span className="text-3xl font-bold text-primary">₪{Number(product.sale_price).toLocaleString()}</span>
-                  {product.price ? (
-                    <span className="text-lg text-muted-foreground line-through">₪{Number(product.price).toLocaleString()}</span>
-                  ) : null}
-                  {discount > 0 && <Badge className="bg-destructive text-destructive-foreground font-bold">-{discount}%</Badge>}
-                </>
-              ) : product.price ? (
-                <span className="text-3xl font-bold text-primary">₪{Number(product.price).toLocaleString()}</span>
-              ) : (
-                <span className="text-lg text-muted-foreground">צור קשר לתמחור</span>
+            <div className="space-y-2 mb-5">
+              <div className="flex items-center gap-3 flex-wrap">
+                {pricing.isOnSaleNow ? (
+                  <>
+                    <span className="text-3xl font-bold text-primary">
+                      ₪{pricing.finalPrice.toLocaleString()}
+                    </span>
+                    <span className="text-lg text-muted-foreground line-through">
+                      ₪{pricing.originalPrice.toLocaleString()}
+                    </span>
+                    {pricing.badgeLabel && (
+                      <Badge className="bg-destructive text-destructive-foreground font-bold">
+                        {pricing.badgeLabel}
+                      </Badge>
+                    )}
+                    {pricing.savings > 0 && (
+                      <span className="text-xs text-destructive font-medium">
+                        חיסכון ₪{pricing.savings.toLocaleString()}
+                      </span>
+                    )}
+                  </>
+                ) : pricing.finalPrice > 0 ? (
+                  <span className="text-3xl font-bold text-primary">
+                    ₪{pricing.finalPrice.toLocaleString()}
+                  </span>
+                ) : (
+                  <span className="text-lg text-muted-foreground">צור קשר לתמחור</span>
+                )}
+              </div>
+
+              {/* Sale hasn't started yet — soft note */}
+              {pricing.saleNotStarted && pricing.saleStartsAt && (
+                <p className="text-xs text-foreground/60">
+                  המבצע מתחיל ב-{pricing.saleStartsAt.toLocaleDateString("he-IL")}
+                </p>
+              )}
+
+              {/* Live countdown (only while the sale is active) */}
+              {pricing.isOnSaleNow && pricing.saleEndsAt && (
+                <SaleCountdown endsAt={pricing.saleEndsAt} />
               )}
             </div>
 
@@ -341,20 +366,6 @@ export default function ProductDetail() {
                 </div>
               </div>
             </div>
-
-            {/* FOMO Timer — only for sale products */}
-            {product.is_on_sale && fomoTimer && !addedToCart && (
-              <div className="flex items-center gap-2 mb-3 p-3 rounded-xl bg-destructive/10 border border-destructive/20">
-                <Flame className="w-4 h-4 text-destructive shrink-0" />
-                <span className="text-sm text-foreground/80 flex-1">
-                  מחיר המבצע מובטח עוד
-                </span>
-                <div className="flex items-center gap-1 font-mono font-bold text-destructive text-sm" dir="ltr">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{String(fomoTimer.m).padStart(2, "0")}:{String(fomoTimer.s).padStart(2, "0")}</span>
-                </div>
-              </div>
-            )}
 
             {/* Add to Cart / Go to Checkout */}
             {!addedToCart ? (
