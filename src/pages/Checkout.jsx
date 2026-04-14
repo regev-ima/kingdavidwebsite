@@ -11,6 +11,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { useCart } from "@/lib/CartContext";
 import { checkoutSchema } from "@/lib/validationSchemas";
 import OrderSummary from "@/components/shop/checkout/OrderSummary";
+import { base44 } from "@/api/base44Client";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 const PAYMENT_METHODS = [
   {
@@ -133,7 +135,57 @@ export default function Checkout() {
     return encodeURIComponent(msg);
   }
 
-  function onSubmit(data) {
+  async function persistOrderToCRM(num, data) {
+    if (!isSupabaseConfigured) {
+      console.warn("[checkout] Supabase not configured — skipping CRM persistence.");
+      return;
+    }
+    const payload = getCheckoutPayload();
+    try {
+      const order = await base44.entities.Order.create({
+        order_number: num,
+        status: "new",
+        payment_method: paymentMethod,
+        full_name: data.fullName,
+        phone: data.phone,
+        email: data.email,
+        city: data.city,
+        street: data.street,
+        apartment: data.apartment || null,
+        notes: data.notes || null,
+        subtotal: payload.subtotal,
+        shipping: payload.shipping,
+        assembly: payload.assembly,
+        with_assembly: payload.withAssembly,
+        total: payload.total,
+      });
+
+      if (order?.id) {
+        await Promise.all(
+          payload.items.map((item) =>
+            base44.entities.OrderItem.create({
+              order_id: order.id,
+              product_id: item.productId,
+              product_name: item.name,
+              size: item.size || null,
+              quantity: item.quantity,
+              with_storage: item.withStorage,
+              unit_price: item.unitPrice,
+              line_total: item.lineTotal,
+            })
+          )
+        );
+      }
+    } catch (err) {
+      console.error("[checkout] Failed to persist order to CRM:", err);
+      toast({
+        title: "ההזמנה התקבלה",
+        description: "נציג יחזור אליך בהקדם. (שמירת CRM נכשלה — בדוק לוגים)",
+      });
+    }
+  }
+
+  async function onSubmit(data) {
     const num = generateOrderNumber();
     setOrderNumber(num);
 
@@ -141,6 +193,8 @@ export default function Checkout() {
       toast({ title: "בקרוב", description: "תשלום בכרטיס אשראי יהיה זמין בקרוב" });
       return;
     }
+
+    await persistOrderToCRM(num, data);
 
     if (paymentMethod === "whatsapp") {
       const msg = buildWhatsAppMessage(data);
