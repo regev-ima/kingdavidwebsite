@@ -1,0 +1,242 @@
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-heebo: 'Heebo', sans-serif;
+    --font-playfair: 'Playfair Display', serif;
+    --font-cormorant: 'Cormorant Garamond', serif;
+    --font-cormorant-sc: 'Cormorant SC', serif;
+
+    /* Royal dark palette */
+    --background: 225 20% 4%;
+    --foreground: 40 20% 92%;
+    --card: 225 15% 8%;
+    --card-foreground: 40 20% 92%;
+    --popover: 225 15% 6%;
+    --popover-foreground: 40 20% 92%;
+    --primary: 42 70% 55%;
+    --primary-foreground: 225 20% 4%;
+    --secondary: 225 12% 12%;
+    --secondary-foreground: 40 20% 92%;
+    --muted: 225 10% 14%;
+    --muted-foreground: 40 10% 55%;
+    --accent: 225 10% 16%;
+    --accent-foreground: 40 20% 92%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 42 30% 50% / 0.12;
+    --input: 225 12% 10%;
+    --ring: 42 70% 55%;
+    --chart-1: 42 70% 55%;
+    --chart-2: 225 10% 70%;
+    --chart-3: 30 50% 50%;
+    --chart-4: 280 30% 55%;
+    --chart-5: 340 40% 50%;
+    --radius: 0.75rem;
+    --sidebar-background: 225 15% 6%;
+    --sidebar-foreground: 40 20% 92%;
+    --sidebar-primary: 42 70% 55%;
+    --sidebar-primary-foreground: 225 20% 4%;
+    --sidebar-accent: 225 10% 12%;
+    --sidebar-accent-foreground: 40 20% 92%;
+    --sidebar-border: 42 30% 50% / 0.12;
+    --sidebar-ring: 42 70% 55%;
+
+    /* Gold palette */
+    --gold: 42 70% 55%;
+    --gold-light: 42 65% 72%;
+    --gold-dark: 42 75% 35%;
+    --gold-muted: 42 70% 55% / 0.15;
+
+    /* Glass variables (kept for compatibility with shadcn/ui) */
+    --glass-bg: 225 20% 100% / 0.04;
+    --glass-bg-hover: 225 20% 100% / 0.08;
+    --glass-bg-strong: 225 20% 100% / 0.06;
+    --glass-border: 42 30% 50% / 0.10;
+    --glass-border-bright: 42 30% 50% / 0.20;
+    --glass-blur: 12px;
+    --glass-blur-heavy: 20px;
+    --glass-blur-light: 8px;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-heebo;
+    direction: rtl;
+    overflow-x: hidden;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: hsl(var(--background)); }
+  ::-webkit-scrollbar-thumb {
+    background: hsla(var(--glass-border-bright));
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsla(var(--glass-border));
+  }
+}
+
+@layer components {
+  /* Royal card */
+  .royal-card {
+    background: hsl(225 15% 8%);
+    border: 1px solid hsl(42 70% 55% / 0.10);
+    border-radius: var(--radius);
+    transition: all 0.3s ease;
+  }
+
+  .royal-card:hover {
+    border-color: hsl(42 70% 55% / 0.25);
+    box-shadow: 0 4px 24px hsl(42 70% 55% / 0.08);
+  }
+
+  /* Glass panels (kept for compatibility) */
+  .glass {
+    background: hsl(225 15% 8% / 0.8);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid hsl(42 70% 55% / 0.10);
+  }
+
+  .glass-strong {
+    background: hsl(225 15% 6% / 0.9);
+    backdrop-filter: blur(var(--glass-blur-heavy));
+    -webkit-backdrop-filter: blur(var(--glass-blur-heavy));
+    border: 1px solid hsl(42 70% 55% / 0.15);
+  }
+
+  .glass-card {
+    background: hsl(225 15% 8%);
+    border: 1px solid hsl(42 70% 55% / 0.10);
+    border-radius: var(--radius);
+    transition: all 0.3s ease;
+  }
+
+  .glass-card:hover {
+    border-color: hsl(42 70% 55% / 0.25);
+    box-shadow: 0 4px 24px hsl(42 70% 55% / 0.08);
+  }
+
+  .glass-input {
+    background: hsl(225 15% 8%) !important;
+    border: 1px solid hsl(42 70% 55% / 0.10) !important;
+    color: hsl(var(--foreground));
+  }
+
+  .glass-input:focus {
+    border-color: hsl(var(--primary)) !important;
+    box-shadow: 0 0 0 2px hsl(42 70% 55% / 0.15);
+  }
+
+  /* Marble texture background */
+  .marble-bg {
+    position: relative;
+  }
+  .marble-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 50%, hsl(225 15% 8% / 0.8) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 80% at 80% 20%, hsl(42 70% 55% / 0.03) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 60% at 50% 80%, hsl(225 20% 6% / 0.6) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Section ornament divider */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 1rem;
+  }
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    height: 1px;
+    width: 80px;
+    background: linear-gradient(90deg, transparent, hsl(42 70% 55% / 0.4), transparent);
+  }
+
+  /* Gold glow for CTAs */
+  .glow-gold {
+    box-shadow: 0 4px 20px hsl(42 70% 55% / 0.25),
+                0 1px 3px hsl(0 0% 0% / 0.2);
+  }
+  .glow-gold:hover {
+    box-shadow: 0 6px 32px hsl(42 70% 55% / 0.35),
+                0 2px 6px hsl(0 0% 0% / 0.2);
+  }
+
+  /* Gold shimmer text */
+  .gold-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(42 70% 55%) 0%,
+      hsl(42 65% 72%) 40%,
+      hsl(42 70% 55%) 60%,
+      hsl(42 65% 72%) 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gold-shimmer 8s ease-in-out infinite;
+  }
+
+  /* Royal highlight edge */
+  .glass-highlight {
+    position: relative;
+  }
+  .glass-highlight::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(42 70% 55% / 0.3), transparent);
+    border-radius: 999px;
+    z-index: 1;
+    pointer-events: none;
+  }
+}
+
+/* Keyframes */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-20px) scale(1.02); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes gold-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes fade-up {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
