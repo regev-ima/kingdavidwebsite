@@ -62,14 +62,51 @@ function mapCategoryToHebrew(rawCategory, rawBedType) {
   return rawCategory || null;
 }
 
+// Apply a product-level sale (percentage or amount off each variation's
+// base_price). Returns variations with the possibly-updated final_price.
+function applyProductSale(variations, row, now) {
+  const startsAt = row.sale_starts_at ? new Date(row.sale_starts_at).getTime() : 0;
+  const endsAt = row.sale_ends_at ? new Date(row.sale_ends_at).getTime() : Infinity;
+  const saleActive =
+    row.is_on_sale === true &&
+    now >= startsAt &&
+    now <= endsAt &&
+    row.discount_type &&
+    Number(row.discount_value) > 0;
+  if (!saleActive) return { variations, saleActive: false };
+
+  const value = Number(row.discount_value);
+  const adjusted = variations.map((v) => {
+    const base = Number(v.base_price ?? v.final_price ?? 0);
+    let newFinal = base;
+    if (row.discount_type === 'percentage') {
+      newFinal = Math.round(base * (1 - value / 100));
+    } else if (row.discount_type === 'amount') {
+      newFinal = Math.max(0, Math.round(base - value));
+    }
+    return { ...v, final_price: newFinal, _sale_applied: true };
+  });
+  return { variations: adjusted, saleActive: true };
+}
+
 function transformProduct(row) {
-  const variations = (row.variations || []).filter((v) => v.is_active !== false);
+  let variations = (row.variations || []).filter((v) => v.is_active !== false);
   variations.sort((a, b) => {
     const aw = a.width_cm || 0;
     const bw = b.width_cm || 0;
     if (aw !== bw) return aw - bw;
     return (a.length_cm || 0) - (b.length_cm || 0);
   });
+
+  // Apply product-level sale, if any. This replaces each variation's
+  // final_price with the discounted value so the rest of the UI keeps
+  // using its existing base_price / final_price shape.
+  const { variations: saleVariations, saleActive } = applyProductSale(
+    variations,
+    row,
+    Date.now()
+  );
+  variations = saleVariations;
 
   const finalPrices = variations.map((v) => Number(v.final_price ?? v.base_price ?? 0)).filter(Boolean);
   const basePrices = variations.map((v) => Number(v.base_price ?? v.final_price ?? 0)).filter(Boolean);
@@ -79,14 +116,21 @@ function transformProduct(row) {
 
   const minFinal = finalPrices.length ? Math.min(...finalPrices) : null;
 
-  const isOnSale = variations.some(
+  const hasVariationLevelSale = variations.some(
     (v) =>
       v.final_price != null &&
       v.base_price != null &&
       Number(v.final_price) < Number(v.base_price)
   );
+  const isOnSale = saleActive || hasVariationLevelSale;
 
-  const hebrewCategory = mapCategoryToHebrew(row.category, row.bed_type);
+  // Categories: website_categories[] wins if set; otherwise fall back to
+  // a sensible default derived from category + bed_type.
+  const fromCrm = Array.isArray(row.website_categories)
+    ? row.website_categories.filter(Boolean)
+    : [];
+  const fallback = mapCategoryToHebrew(row.category, row.bed_type);
+  const categories = fromCrm.length > 0 ? fromCrm : (fallback ? [fallback] : []);
 
   return {
     ...row,
@@ -102,12 +146,15 @@ function transformProduct(row) {
     is_featured: row.is_active !== false,
     features: splitFeatures(row.features),
     variations,
-    // Override `category` with the Hebrew tab label the storefront expects
-    // ("מזרני יחיד", "מזרנים זוגיים", "מיטות יהודיות", ...). Keep the raw
-    // CRM values available under *_raw for anything that still needs them.
-    category: hebrewCategory || row.category,
+    // New: array of Hebrew tab labels this product appears under.
+    // Shop.jsx reads this first, falls back to `category` (below).
+    categories,
+    // `category` is the first of the categories — kept for components
+    // that still read the singular field (e.g. ProductCard label).
+    category: categories[0] || row.category,
     category_raw: row.category,
     bed_type_raw: row.bed_type,
+    sale_ends_at: row.sale_ends_at || null,
   };
 }
 

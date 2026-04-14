@@ -56,9 +56,14 @@ export default function Shop() {
     if (activeCategory === "מבצעים") {
       result = result.filter((p) => p.is_on_sale);
     } else if (activeCategory !== "הכל") {
-      result = result.filter((p) =>
-        p.category === activeCategory || p.category?.includes(activeCategory)
-      );
+      result = result.filter((p) => {
+        // Prefer the new multi-category field from the CRM
+        if (Array.isArray(p.categories) && p.categories.length > 0) {
+          return p.categories.includes(activeCategory);
+        }
+        // Fallback: legacy single-category match
+        return p.category === activeCategory || p.category?.includes(activeCategory);
+      });
     }
 
     if (search) {
