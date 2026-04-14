@@ -246,6 +246,53 @@
                 0 2px 6px hsl(0 0% 0% / 0.2);
   }
 
+  /* Shimmer skeleton (for loading states) */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+    background: hsl(225 15% 12%);
+  }
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(42 70% 55% / 0.08) 40%,
+      hsl(42 70% 55% / 0.12) 50%,
+      hsl(42 70% 55% / 0.08) 60%,
+      transparent
+    );
+    animation: shimmer-sweep 1.8s ease-in-out infinite;
+  }
+  .light .shimmer {
+    background: hsl(40 20% 92%);
+  }
+  .light .shimmer::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(42 70% 45% / 0.12) 40%,
+      hsl(42 70% 45% / 0.18) 50%,
+      hsl(42 70% 45% / 0.12) 60%,
+      transparent
+    );
+  }
+  @keyframes shimmer-sweep {
+    to { transform: translateX(100%); }
+  }
+
+  /* Hide scrollbar while keeping scroll */
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
   /* =====================================================================
      Light theme overrides for the custom component classes.
      (royal-card / glass / glass-card / glass-input / marble-bg all use

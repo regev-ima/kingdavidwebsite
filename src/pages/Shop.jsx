@@ -4,8 +4,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Search, SlidersHorizontal } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Search, SlidersHorizontal, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import ProductCard from "../components/shop/ProductCard";
 import { fallbackProducts } from "@/data/fallbackProducts";
 
@@ -86,48 +86,79 @@ export default function Shop() {
     return result;
   }, [products, activeCategory, search, sortBy, sizeFilter]);
 
+  const hasActiveFilters = activeCategory !== "הכל" || search || sizeFilter !== "all" || sortBy !== "default";
+
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <div className="pt-10 pb-6 md:pt-14 md:pb-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
-          <h1 className="text-3xl md:text-4xl font-cormorant font-semibold text-foreground mb-2">
+      <div className="relative pt-14 pb-10 md:pt-20 md:pb-14 overflow-hidden">
+        {/* decorative gold glow behind title */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-primary/5 via-transparent to-transparent" aria-hidden />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center relative">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-[11px] tracking-[0.4em] uppercase text-primary/70 mb-4 font-light"
+          >
+            קטלוג מוצרים
+          </motion.p>
+          <motion.h1
+            key={activeCategory}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="text-4xl md:text-6xl font-cormorant font-semibold text-foreground mb-3"
+          >
             {activeCategory === "הכל" ? "כל המוצרים" : activeCategory}
-          </h1>
-          <p className="text-foreground/50 text-sm font-light">
+          </motion.h1>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <span className="h-px w-14 bg-gradient-to-r from-transparent to-primary/40" />
+            <span className="w-1.5 h-1.5 rounded-full bg-primary/70" />
+            <span className="h-px w-14 bg-gradient-to-l from-transparent to-primary/40" />
+          </div>
+          <p className="text-foreground/60 text-sm md:text-base font-light max-w-lg mx-auto">
             גלו את המגוון הרחב של מוצרי קינג דיוויד
           </p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-12">
-        {/* Filter Bar — single row on desktop, stacked on mobile */}
-        <div className="royal-card rounded-lg p-4 mb-8">
-          {/* Top row: Categories (scrollable) + Search */}
-          <div className="flex items-center gap-3 mb-3">
-            {/* Categories — horizontal scroll */}
-            <div className="flex-1 overflow-x-auto">
-              <div className="flex gap-1.5 min-w-max">
-                {categories.map((cat) => (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
+        {/* Sticky Filter Bar */}
+        <div className="sticky top-[64px] md:top-[72px] z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 mb-8 bg-background/75 backdrop-blur-xl border-b border-primary/10">
+          {/* Category tabs — horizontal scroll w/ animated indicator */}
+          <div className="flex items-center gap-3 py-3 overflow-x-auto scrollbar-hidden">
+            <div className="flex gap-1 min-w-max relative">
+              {categories.map((cat) => {
+                const active = activeCategory === cat;
+                return (
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-4 h-9 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                      activeCategory === cat
-                        ? "bg-primary text-primary-foreground"
-                        : "text-foreground/50 hover:text-foreground hover:bg-primary/5"
+                    className={`relative px-5 h-10 rounded-full text-sm whitespace-nowrap transition-colors ${
+                      active
+                        ? "text-primary-foreground"
+                        : "text-foreground/55 hover:text-foreground"
                     }`}
                   >
-                    {cat}
+                    {active && (
+                      <motion.span
+                        layoutId="activeCategoryPill"
+                        transition={{ type: "spring", stiffness: 480, damping: 36 }}
+                        className="absolute inset-0 bg-primary rounded-full shadow-[0_4px_18px_hsl(42_70%_55%_/_0.35)]"
+                        aria-hidden
+                      />
+                    )}
+                    <span className="relative z-10 font-medium tracking-wide">{cat}</span>
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Bottom row: Search + Size + Sort — all inline */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
+          {/* Secondary row: search, size, sort, count */}
+          <div className="flex items-center gap-2 pb-3 flex-wrap md:flex-nowrap">
+            <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
                 placeholder="חיפוש מוצר..."
@@ -135,6 +166,15 @@ export default function Shop() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="pr-10 h-10"
               />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  aria-label="נקה חיפוש"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             <Select value={sizeFilter} onValueChange={setSizeFilter}>
@@ -150,7 +190,7 @@ export default function Shop() {
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-36 h-10 shrink-0">
+              <SelectTrigger className="w-40 h-10 shrink-0">
                 <SlidersHorizontal className="w-3.5 h-3.5 ml-1.5 shrink-0" />
                 <SelectValue placeholder="מיון" />
               </SelectTrigger>
@@ -162,19 +202,25 @@ export default function Shop() {
                 <SelectItem value="newest">חדשים</SelectItem>
               </SelectContent>
             </Select>
-          </div>
 
-          {/* Active filter + result count */}
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.04]">
-            <span className="text-xs text-foreground/40">{filtered.length} מוצרים</span>
-            {(activeCategory !== "הכל" || search || sizeFilter !== "all") && (
-              <button
-                onClick={() => { setActiveCategory("הכל"); setSearch(""); setSizeFilter("all"); setSortBy("default"); }}
-                className="text-xs text-primary hover:text-primary/80 transition-colors"
-              >
-                נקה סינון
-              </button>
-            )}
+            <div className="flex items-center gap-3 mr-auto px-1">
+              <span className="text-xs text-foreground/50 whitespace-nowrap">
+                {filtered.length} מוצרים
+              </span>
+              {hasActiveFilters && (
+                <button
+                  onClick={() => {
+                    setActiveCategory("הכל");
+                    setSearch("");
+                    setSizeFilter("all");
+                    setSortBy("default");
+                  }}
+                  className="text-xs text-primary hover:text-primary/70 transition-colors underline-offset-2 hover:underline"
+                >
+                  נקה סינון
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -182,26 +228,45 @@ export default function Shop() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array(8).fill(0).map((_, i) => (
-              <div key={i} className="rounded-2xl overflow-hidden">
-                <Skeleton className="aspect-square" />
-                <div className="p-5 space-y-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-6 w-24" />
+              <div key={i} className="rounded-2xl overflow-hidden royal-card">
+                <div className="aspect-[4/5] shimmer" />
+                <div className="p-5 space-y-3">
+                  <div className="h-3 w-24 shimmer rounded" />
+                  <div className="h-5 w-3/4 shimmer rounded" />
+                  <div className="h-7 w-28 shimmer rounded" />
                 </div>
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground text-lg">לא נמצאו מוצרים</p>
+          <div className="text-center py-24">
+            <div className="inline-block mb-4 text-5xl font-cormorant text-primary/30">∅</div>
+            <p className="text-foreground/60 text-lg font-light">לא נמצאו מוצרים</p>
+            {hasActiveFilters && (
+              <button
+                onClick={() => {
+                  setActiveCategory("הכל");
+                  setSearch("");
+                  setSizeFilter("all");
+                  setSortBy("default");
+                }}
+                className="mt-4 text-primary text-sm tracking-wide hover:underline"
+              >
+                נקה את כל הסינונים
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filtered.map((product, i) => (
-              <ProductCard key={product.id} product={product} index={i} />
-            ))}
-          </div>
+          <AnimatePresence mode="popLayout">
+            <motion.div
+              layout
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            >
+              {filtered.map((product, i) => (
+                <ProductCard key={product.id} product={product} index={i} />
+              ))}
+            </motion.div>
+          </AnimatePresence>
         )}
       </div>
     </div>

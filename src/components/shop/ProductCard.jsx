@@ -1,88 +1,161 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { Eye, Plus, ArrowLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function ProductCard({ product, index }) {
+  const [hovered, setHovered] = useState(false);
   const discount = product.sale_price && product.price
     ? Math.round(((product.price - product.sale_price) / product.price) * 100)
     : 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
+    <motion.article
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
-      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: Math.min(index * 0.04, 0.3), ease: [0.22, 1, 0.36, 1] }}
+      viewport={{ once: true, margin: "-10% 0px" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="group relative"
     >
-      <Link to={`/ProductDetail?id=${product.id}`} className="group block">
-        <div className="royal-card rounded-lg overflow-hidden">
-          <div className="relative aspect-square overflow-hidden">
+      <Link to={`/ProductDetail?id=${product.id}`} className="block">
+        {/* Outer frame with gold accent animation */}
+        <div className="relative rounded-2xl overflow-hidden transition-all duration-500 royal-card group-hover:shadow-[0_20px_60px_-15px_hsl(42_70%_55%_/_0.25)] group-hover:-translate-y-0.5">
+          {/* Image */}
+          <div className="relative aspect-[4/5] overflow-hidden">
             {product.image_url ? (
-              <img
+              <motion.img
                 src={product.image_url}
                 alt={product.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                loading="lazy"
+                animate={{ scale: hovered ? 1.08 : 1 }}
+                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-0 w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-card">
-                <span className="text-5xl font-cormorant text-primary/15">KD</span>
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[hsl(225_15%_10%)] to-[hsl(225_20%_4%)]">
+                <span className="text-7xl font-cormorant text-primary/15 select-none">KD</span>
               </div>
             )}
-            <div className="absolute top-3 right-3 flex flex-col gap-2">
+
+            {/* Soft vignette for legibility */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-500" />
+
+            {/* Top-right: badges */}
+            <div className="absolute top-3 right-3 flex flex-col gap-2 items-end z-10">
               {discount > 0 && (
-                <Badge className="bg-destructive text-destructive-foreground font-medium text-xs">
+                <Badge className="bg-destructive text-destructive-foreground font-bold text-xs px-2.5 py-1 tracking-wide shadow-lg">
                   -{discount}%
                 </Badge>
               )}
               {product.is_on_sale && !discount && (
-                <Badge className="bg-destructive text-destructive-foreground text-xs">מבצע</Badge>
+                <Badge className="bg-destructive text-destructive-foreground text-xs px-2.5 py-1">מבצע</Badge>
               )}
             </div>
+
+            {/* Hover-reveal quick actions */}
+            <motion.div
+              initial={false}
+              animate={{
+                opacity: hovered ? 1 : 0,
+                y: hovered ? 0 : 12,
+              }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+              className="absolute top-3 left-3 z-10 flex flex-col gap-2"
+            >
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); /* Placeholder for Quick View */ }}
+                aria-label="תצוגה מהירה"
+                className="w-10 h-10 rounded-full bg-background/80 backdrop-blur-md border border-primary/20 flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
+              >
+                <Eye className="w-[18px] h-[18px]" />
+              </button>
+            </motion.div>
+
+            {/* Bottom gold accent line (grows on hover) */}
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] w-0 group-hover:w-full bg-gradient-to-r from-transparent via-primary to-transparent transition-all duration-700 ease-out" />
           </div>
-          <div className="p-5">
-            <p className="text-xs text-muted-foreground mb-1 font-light">{product.category}</p>
-            <h3 className="font-cormorant text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
+
+          {/* Body */}
+          <div className="relative p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] tracking-[0.22em] text-muted-foreground uppercase font-light">
+                {product.category}
+              </p>
+              {product.warranty_years && (
+                <span className="text-[10px] text-primary/70 font-light">
+                  {product.warranty_years} שנות אחריות
+                </span>
+              )}
+            </div>
+
+            <h3 className="font-cormorant text-xl leading-tight font-semibold text-foreground group-hover:text-primary transition-colors">
               {product.name}
             </h3>
+
             {product.hardness && (() => {
               const hardnessMap = { "רך": 3, "בינוני": 5, "בינוני-קשיח": 7, "קשיח": 9 };
-              const score = hardnessMap[product.hardness] ?? 5;
+              const score = typeof product.hardness === "number"
+                ? product.hardness
+                : (hardnessMap[product.hardness] ?? 5);
               return (
-                <div className="mb-3">
-                  <p className="text-xs text-muted-foreground mb-1 font-light">{product.hardness} – קשיחות: {score}/10</p>
-                  <div className="w-full h-1 rounded-full bg-primary/10 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${(score / 10) * 100}%` }}
+                <div className="space-y-1">
+                  <p className="text-[11px] text-muted-foreground font-light">
+                    {typeof product.hardness === "string" ? product.hardness : "קשיחות"} — {score}/10
+                  </p>
+                  <div className="w-full h-[3px] rounded-full bg-foreground/5 overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      whileInView={{ width: `${(score / 10) * 100}%` }}
+                      transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                      viewport={{ once: true }}
+                      className="h-full rounded-full bg-gradient-to-l from-primary to-primary/60"
                     />
                   </div>
                 </div>
               );
             })()}
 
-            <div className="flex items-center gap-2 mb-3">
-              {product.sale_price ? (
-                <>
-                  <span className="text-lg font-semibold text-primary">₪{product.sale_price.toLocaleString()}</span>
-                  <span className="text-sm text-muted-foreground line-through">₪{product.price.toLocaleString()}</span>
-                </>
-              ) : (
-                <span className="text-lg font-semibold text-primary">₪{product.price.toLocaleString()}</span>
-              )}
-            </div>
+            {/* Price row */}
+            <div className="flex items-end justify-between pt-2">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                {product.sale_price ? (
+                  <>
+                    <span className="text-2xl font-cormorant font-semibold text-primary leading-none">
+                      ₪{product.sale_price.toLocaleString()}
+                    </span>
+                    <span className="text-sm text-muted-foreground line-through">
+                      ₪{product.price.toLocaleString()}
+                    </span>
+                  </>
+                ) : product.price ? (
+                  <span className="text-2xl font-cormorant font-semibold text-primary leading-none">
+                    ₪{product.price.toLocaleString()}
+                  </span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">צור קשר לתמחור</span>
+                )}
+              </div>
 
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full min-h-[44px] border-primary/15 text-foreground/60 hover:border-primary/30 hover:text-primary rounded-none tracking-wide font-light"
-            >
-              לפרטים
-            </Button>
+              {/* Arrow CTA — slides in on hover */}
+              <motion.span
+                animate={{
+                  x: hovered ? 0 : 8,
+                  opacity: hovered ? 1 : 0.5,
+                }}
+                transition={{ duration: 0.3 }}
+                className="inline-flex items-center gap-1.5 text-xs tracking-widest text-primary font-light group-hover:text-primary"
+              >
+                לפרטים
+                <ArrowLeft className="w-4 h-4" />
+              </motion.span>
+            </div>
           </div>
         </div>
       </Link>
-    </motion.div>
+    </motion.article>
   );
 }
