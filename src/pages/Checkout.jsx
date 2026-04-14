@@ -141,41 +141,52 @@ export default function Checkout() {
       return;
     }
     const payload = getCheckoutPayload();
-    try {
-      const order = await base44.entities.Order.create({
-        order_number: num,
-        status: "new",
-        payment_method: paymentMethod,
-        full_name: data.fullName,
-        phone: data.phone,
-        email: data.email,
-        city: data.city,
-        street: data.street,
-        apartment: data.apartment || null,
-        notes: data.notes || null,
-        subtotal: payload.subtotal,
-        shipping: payload.shipping,
-        assembly: payload.assembly,
-        with_assembly: payload.withAssembly,
-        total: payload.total,
-      });
 
-      if (order?.id) {
-        await Promise.all(
-          payload.items.map((item) =>
-            base44.entities.OrderItem.create({
-              order_id: order.id,
-              product_id: item.productId,
-              product_name: item.name,
-              size: item.size || null,
-              quantity: item.quantity,
-              with_storage: item.withStorage,
-              unit_price: item.unitPrice,
-              line_total: item.lineTotal,
-            })
-          )
-        );
-      }
+    // Translate website cart -> kcrm orders.items JSONB shape.
+    const itemsJsonb = payload.items.map((item) => ({
+      product_id: item.productId,
+      variation_id: item.variationId,
+      sku: item.sku,
+      name: item.name,
+      size: item.size || null,
+      quantity: item.quantity,
+      with_storage: item.withStorage,
+      unit_price: item.unitPrice,
+      line_total: item.lineTotal,
+      image_url: item.imageUrl,
+    }));
+
+    const extras = {
+      shipping: payload.shipping,
+      with_assembly: payload.withAssembly,
+      assembly: payload.assembly,
+      payment_method: paymentMethod,
+      website_notes: data.notes || null,
+    };
+
+    const orderRow = {
+      order_number: num,
+      source: "website",
+      payment_status: "pending",
+      production_status: "new",
+      delivery_status: "pending",
+      customer_name: data.fullName,
+      customer_phone: data.phone,
+      customer_email: data.email,
+      delivery_address: [data.street, data.apartment].filter(Boolean).join(", ") || null,
+      delivery_city: data.city,
+      apartment_number: data.apartment || null,
+      items: itemsJsonb,
+      extras,
+      subtotal: payload.subtotal,
+      discount_total: 0,
+      vat_amount: 0,
+      total: payload.total,
+      notes_sales: data.notes || null,
+    };
+
+    try {
+      await base44.entities.Order.create(orderRow);
     } catch (err) {
       console.error("[checkout] Failed to persist order to CRM:", err);
       toast({
