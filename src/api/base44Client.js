@@ -35,6 +35,33 @@ function splitFeatures(text) {
     .filter(Boolean);
 }
 
+// Map kcrm's (category, bed_type) to the Hebrew category names the
+// storefront tabs use ("מזרנים זוגיים", "מזרני יחיד", "מיטות זוגיות",
+// "מיטות יהודיות", "מיטות מעוצבות"). Falls back to the raw CRM value
+// when we can't infer a match.
+function mapCategoryToHebrew(rawCategory, rawBedType) {
+  const cat = (rawCategory || '').toString().trim().toLowerCase();
+  const type = (rawBedType || '').toString().trim().toLowerCase();
+
+  if (cat === 'mattress' || cat === 'מזרן' || cat === 'מזרנים') {
+    if (type === 'single' || type === 'יחיד') return 'מזרני יחיד';
+    if (type === 'double' || type === 'זוגי') return 'מזרנים זוגיים';
+    return 'מזרנים';
+  }
+
+  if (cat === 'bed' || cat === 'מיטה' || cat === 'מיטות') {
+    if (type === 'single' || type === 'יחיד') return 'מיטות יחיד';
+    if (type === 'double' || type === 'זוגי') return 'מיטות זוגיות';
+    if (type === 'jewish' || type === 'yehudit' || type === 'יהודית')
+      return 'מיטות יהודיות';
+    if (type === 'designed' || type === 'designer' || type === 'מעוצבת')
+      return 'מיטות מעוצבות';
+    return 'מיטות';
+  }
+
+  return rawCategory || null;
+}
+
 function transformProduct(row) {
   const variations = (row.variations || []).filter((v) => v.is_active !== false);
   variations.sort((a, b) => {
@@ -59,6 +86,8 @@ function transformProduct(row) {
       Number(v.final_price) < Number(v.base_price)
   );
 
+  const hebrewCategory = mapCategoryToHebrew(row.category, row.bed_type);
+
   return {
     ...row,
     price: defaultVariation
@@ -73,6 +102,12 @@ function transformProduct(row) {
     is_featured: row.is_active !== false,
     features: splitFeatures(row.features),
     variations,
+    // Override `category` with the Hebrew tab label the storefront expects
+    // ("מזרני יחיד", "מזרנים זוגיים", "מיטות יהודיות", ...). Keep the raw
+    // CRM values available under *_raw for anything that still needs them.
+    category: hebrewCategory || row.category,
+    category_raw: row.category,
+    bed_type_raw: row.bed_type,
   };
 }
 
