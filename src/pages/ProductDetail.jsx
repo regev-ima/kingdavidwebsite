@@ -260,12 +260,16 @@ export default function ProductDetail() {
             <div className="flex items-center gap-3 mb-5">
               {product.sale_price ? (
                 <>
-                  <span className="text-3xl font-bold text-primary">₪{product.sale_price.toLocaleString()}</span>
-                  <span className="text-lg text-muted-foreground line-through">₪{product.price.toLocaleString()}</span>
+                  <span className="text-3xl font-bold text-primary">₪{Number(product.sale_price).toLocaleString()}</span>
+                  {product.price ? (
+                    <span className="text-lg text-muted-foreground line-through">₪{Number(product.price).toLocaleString()}</span>
+                  ) : null}
                   {discount > 0 && <Badge className="bg-destructive text-destructive-foreground font-bold">-{discount}%</Badge>}
                 </>
+              ) : product.price ? (
+                <span className="text-3xl font-bold text-primary">₪{Number(product.price).toLocaleString()}</span>
               ) : (
-                <span className="text-3xl font-bold text-primary">₪{product.price.toLocaleString()}</span>
+                <span className="text-lg text-muted-foreground">צור קשר לתמחור</span>
               )}
             </div>
 
