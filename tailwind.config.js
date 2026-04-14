@@ -5,7 +5,8 @@ module.exports = {
   theme: {
   	extend: {
       fontFamily: {
-        heebo: ['var(--font-heebo)'],
+        'sans-hebrew': ['var(--font-sans-hebrew)'],
+        heebo: ['var(--font-sans-hebrew)'],
         playfair: ['var(--font-playfair)'],
         cormorant: ['var(--font-cormorant)'],
         'cormorant-sc': ['var(--font-cormorant-sc)'],
