@@ -129,6 +129,17 @@
     opacity: 1 !important;
   }
 
+  /* Ambient page tint for the light theme — subtle cream gradient. */
+  .light body {
+    background:
+      radial-gradient(ellipse 100% 60% at 50% 0%,
+        hsl(42 55% 92%) 0%, transparent 70%),
+      radial-gradient(ellipse 100% 60% at 50% 100%,
+        hsl(42 55% 92%) 0%, transparent 70%),
+      hsl(var(--background));
+    background-attachment: fixed;
+  }
+
   /* Custom scrollbar */
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-track { background: hsl(var(--background)); }
@@ -233,6 +244,74 @@
   .glow-gold:hover {
     box-shadow: 0 6px 32px hsl(42 70% 55% / 0.35),
                 0 2px 6px hsl(0 0% 0% / 0.2);
+  }
+
+  /* =====================================================================
+     Light theme overrides for the custom component classes.
+     (royal-card / glass / glass-card / glass-input / marble-bg all use
+     hard-coded dark HSLs; translate them to cream here.)
+     ===================================================================== */
+  .light .royal-card {
+    background: hsl(40 35% 99%);
+    border: 1px solid hsl(42 50% 55% / 0.22);
+    box-shadow: 0 1px 3px hsl(225 30% 12% / 0.04);
+  }
+  .light .royal-card:hover {
+    border-color: hsl(42 70% 45% / 0.40);
+    box-shadow: 0 6px 24px hsl(42 70% 45% / 0.12);
+  }
+
+  .light .glass {
+    background: hsl(40 35% 99% / 0.85);
+    border: 1px solid hsl(42 50% 55% / 0.20);
+  }
+  .light .glass-strong {
+    background: hsl(40 35% 99% / 0.92);
+    border: 1px solid hsl(42 50% 55% / 0.25);
+  }
+  .light .glass-light {
+    background: hsl(40 35% 99% / 0.55);
+    border: 1px solid hsl(42 50% 55% / 0.12);
+  }
+
+  .light .glass-card {
+    background: hsl(40 35% 99%);
+    border: 1px solid hsl(42 50% 55% / 0.22);
+    box-shadow: 0 1px 3px hsl(225 30% 12% / 0.04);
+  }
+  .light .glass-card:hover {
+    border-color: hsl(42 70% 45% / 0.40);
+    box-shadow: 0 6px 24px hsl(42 70% 45% / 0.12);
+  }
+
+  .light .glass-input {
+    background: hsl(40 25% 97%) !important;
+    border: 1px solid hsl(42 40% 55% / 0.25) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+  .light .glass-input:focus {
+    border-color: hsl(var(--primary)) !important;
+    box-shadow: 0 0 0 2px hsl(42 70% 45% / 0.20);
+  }
+
+  .light .marble-bg::before {
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 50%,
+        hsl(42 40% 96% / 0.8) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 80% at 80% 20%,
+        hsl(42 70% 55% / 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 60% at 50% 80%,
+        hsl(42 30% 94% / 0.6) 0%, transparent 60%);
+  }
+
+  /* Buttons that rely on `glass` classes — soften shadow */
+  .light .glow-gold {
+    box-shadow: 0 4px 18px hsl(42 70% 45% / 0.22),
+                0 1px 3px hsl(225 30% 12% / 0.08);
+  }
+  .light .glow-gold:hover {
+    box-shadow: 0 6px 28px hsl(42 70% 45% / 0.32),
+                0 2px 6px hsl(225 30% 12% / 0.12);
   }
 
   /* Gold shimmer text */
