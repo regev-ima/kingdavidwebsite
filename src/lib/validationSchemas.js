@@ -20,3 +20,8 @@ export const shippingSchema = z.object({
 });
 
 export const checkoutSchema = contactSchema.merge(shippingSchema);
+
+export const clubSignupSchema = contactSchema.extend({
+  city: z.string().optional(),
+  notes: z.string().optional(),
+});

@@ -380,11 +380,38 @@ const addonEntity = {
   },
 };
 
+const clubSignupEntity = {
+  async list() {
+    return [];
+  },
+  async filter() {
+    return [];
+  },
+  async get() {
+    return null;
+  },
+  async create(payload) {
+    if (!isSupabaseConfigured) {
+      console.warn('[base44Client shim] ClubSignup.create called but Supabase is not configured.');
+      return null;
+    }
+    const { data, error } = await supabase.rpc('website_create_club_signup', {
+      signup_data: payload,
+    });
+    if (error) {
+      console.error('[base44Client shim] website_create_club_signup failed:', error.message);
+      throw error;
+    }
+    return { id: data };
+  },
+};
+
 const ENTITIES = {
   Product: productEntity,
   Order: orderEntity,
   Addon: addonEntity,
   ProductAddon: addonEntity, // legacy alias
+  ClubSignup: clubSignupEntity,
   BlogPost: stubEntity('BlogPost'),
   ContactInquiry: stubEntity('ContactInquiry'),
 };
