@@ -477,12 +477,28 @@ export default function ProductDetail() {
                 {applicableAddons.map((addon) => {
                   const price = priceForAddon(addon, selectedVariation);
                   const checked = Boolean(selectedAddons[addon.id]);
+                  // Storage-box addons ("ארגז מצעים" / "ארגזים נפרדים") are
+                  // mutually exclusive — you can only pick one of them.
+                  const isStorageBox = (a) => (a?.name || "").includes("ארגז");
                   return (
                     <button
                       key={addon.id}
                       type="button"
                       onClick={() =>
-                        setSelectedAddons((prev) => ({ ...prev, [addon.id]: !prev[addon.id] }))
+                        setSelectedAddons((prev) => {
+                          const turningOn = !prev[addon.id];
+                          const next = { ...prev };
+                          if (turningOn && isStorageBox(addon)) {
+                            applicableAddons.forEach((a) => {
+                              if (a.id !== addon.id && isStorageBox(a)) {
+                                delete next[a.id];
+                              }
+                            });
+                          }
+                          if (turningOn) next[addon.id] = true;
+                          else delete next[addon.id];
+                          return next;
+                        })
                       }
                       className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all text-right ${
                         checked
