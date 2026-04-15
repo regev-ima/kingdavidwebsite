@@ -8,8 +8,9 @@ import SaleCountdown from "@/components/shop/SaleCountdown";
 import HardnessScale from "@/components/shop/HardnessScale";
 import { optimizeImage, optimizeSrcSet } from "@/lib/image";
 
-export default function ProductCard({ product, index }) {
+export default function ProductCard({ product, index, layout = "grid" }) {
   const [hovered, setHovered] = useState(false);
+  const isRow = layout === "row";
 
   // Pick the default variation (or first) so the card price reflects
   // the same variation the detail page opens to.
@@ -33,9 +34,19 @@ export default function ProductCard({ product, index }) {
         {/* Outer frame with gold accent animation. flex column so the
             price row always sticks to the bottom even when sibling
             cards carry more optional content (e.g. countdown pill). */}
-        <div className="relative flex flex-col h-full rounded-2xl overflow-hidden transition-all duration-500 royal-card group-hover:shadow-[0_20px_60px_-15px_hsl(42_70%_55%_/_0.25)] group-hover:-translate-y-0.5">
-          {/* Image — fixed 4:5 ratio, never stretches */}
-          <div className="relative aspect-[4/5] overflow-hidden shrink-0">
+        <div
+          className={`relative flex ${
+            isRow ? "flex-row" : "flex-col"
+          } h-full rounded-2xl overflow-hidden transition-all duration-500 royal-card group-hover:shadow-[0_20px_60px_-15px_hsl(42_70%_55%_/_0.25)] group-hover:-translate-y-0.5`}
+        >
+          {/* Image — grid: 4:5 ratio. row: fixed width, full height */}
+          <div
+            className={`relative overflow-hidden shrink-0 ${
+              isRow
+                ? "w-48 sm:w-64 aspect-square sm:aspect-[4/5]"
+                : "aspect-[4/5]"
+            }`}
+          >
             {product.image_url ? (
               <motion.img
                 src={optimizeImage(product.image_url, { width: 600, quality: 72 })}
