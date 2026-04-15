@@ -298,6 +298,15 @@ export default function ProductDetail() {
               )}
             </div>
 
+            {/* Product description — right under the price & sale banner */}
+            {product.description && (
+              <div className="mb-6 pb-5 border-b border-foreground/10">
+                <p className="text-sm md:text-[15px] leading-relaxed text-foreground/75 whitespace-pre-line">
+                  {product.description}
+                </p>
+              </div>
+            )}
+
             {/* Quick Specs */}
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-foreground/60 pb-5 mb-4 border-b border-white/[0.06]">
               {product.height_cm && (
@@ -487,21 +496,8 @@ export default function ProductDetail() {
         </div>
       </FadeInSection>
 
-      <SectionDivider />
-
-      {/* ===== SECTION 3: Story / Description ===== */}
-      {product.description && (
-        <FadeInSection>
-          <div className="py-16 md:py-20">
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-              <h2 className="text-2xl font-bold text-foreground mb-8 text-center">הסיפור שלנו</h2>
-              <p className="max-w-3xl mx-auto text-center text-lg leading-relaxed text-foreground/70 whitespace-pre-line">
-                {product.description}
-              </p>
-            </div>
-          </div>
-        </FadeInSection>
-      )}
+      {/* (Section 3 moved up next to the price/hero; description now lives
+           directly under the sale banner in the product info column.) */}
 
       {/* ===== SECTION 4: Divider + Features ===== */}
       {product.features?.length > 0 && (
