@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Eye, ArrowLeft } from "lucide-react";
+import { Eye, ArrowLeft, Layers } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { computeEffectivePrice } from "@/lib/pricing";
 import SaleCountdown from "@/components/shop/SaleCountdown";
@@ -43,7 +43,7 @@ export default function ProductCard({ product, index, layout = "grid" }) {
           <div
             className={`relative overflow-hidden shrink-0 ${
               isRow
-                ? "w-48 sm:w-64 aspect-square sm:aspect-[4/5]"
+                ? "w-24 sm:w-32 aspect-square"
                 : "aspect-[4/5]"
             }`}
           >
@@ -106,17 +106,17 @@ export default function ProductCard({ product, index, layout = "grid" }) {
 
           {/* Body — flex-1 so cards in a row equalise to the tallest one,
               with the price row pinned at the bottom via mt-auto. */}
-          <div className="relative p-5 flex flex-col gap-3 flex-1">
+          <div className={`relative flex flex-col flex-1 ${isRow ? "p-3 gap-1.5" : "p-5 gap-3"}`}>
             <div className="flex items-center justify-between">
-              <p className="text-[11px] tracking-[0.22em] text-muted-foreground uppercase font-light">
+              <p className={`tracking-[0.22em] text-muted-foreground uppercase font-light ${isRow ? "text-[9px]" : "text-[11px]"}`}>
                 {product.category}
               </p>
-              <span className="text-[10px] text-primary/70 font-light">
+              <span className={`text-primary/70 font-light ${isRow ? "text-[9px]" : "text-[10px]"}`}>
                 {product.warranty_years ?? 10} שנות אחריות
               </span>
             </div>
 
-            <h3 className="font-sans-hebrew text-lg leading-tight font-semibold text-foreground group-hover:text-primary transition-colors">
+            <h3 className={`font-sans-hebrew leading-tight font-semibold text-foreground group-hover:text-primary transition-colors ${isRow ? "text-sm" : "text-lg"}`}>
               {product.name}
             </h3>
 
@@ -125,9 +125,19 @@ export default function ProductCard({ product, index, layout = "grid" }) {
               const score = typeof product.hardness === "number"
                 ? product.hardness
                 : (hardnessMap[product.hardness] ?? 5);
+              const label = score > 7 ? "קשיח" : score > 5 ? "בינוני-קשיח" : score > 3 ? "בינוני" : "רך";
               return (
-                <div className="pt-1">
-                  <HardnessScale value={score} size="sm" />
+                <div className={isRow ? "pt-0.5" : "pt-1"}>
+                  <div className={`flex items-baseline justify-between ${isRow ? "mb-1" : "mb-2"}`}>
+                    <span className={`font-medium text-foreground/80 inline-flex items-center gap-1 ${isRow ? "text-[10px]" : "text-xs"}`}>
+                      <Layers className={`text-primary ${isRow ? "w-3 h-3" : "w-3.5 h-3.5"}`} />
+                      דרגת קושי
+                    </span>
+                    <span className={`text-foreground/55 ${isRow ? "text-[9px]" : "text-[10px]"}`}>
+                      {label}
+                    </span>
+                  </div>
+                  <HardnessScale value={score} size="sm" animate={!isRow} />
                 </div>
               );
             })()}
@@ -140,23 +150,23 @@ export default function ProductCard({ product, index, layout = "grid" }) {
             )}
 
             {/* Price row — mt-auto keeps it at the bottom of every card */}
-            <div className="mt-auto flex items-end justify-between pt-1">
+            <div className={`mt-auto flex items-end justify-between ${isRow ? "pt-0.5" : "pt-1"}`}>
               <div className="flex items-baseline gap-2 flex-wrap">
                 {pricing.isOnSaleNow ? (
                   <>
-                    <span className="text-2xl font-sans-hebrew font-semibold text-primary leading-none">
+                    <span className={`font-sans-hebrew font-semibold text-primary leading-none ${isRow ? "text-base" : "text-2xl"}`}>
                       ₪{pricing.finalPrice.toLocaleString()}
                     </span>
-                    <span className="text-sm text-muted-foreground line-through">
+                    <span className={`text-muted-foreground line-through ${isRow ? "text-xs" : "text-sm"}`}>
                       ₪{pricing.originalPrice.toLocaleString()}
                     </span>
                   </>
                 ) : pricing.finalPrice > 0 ? (
-                  <span className="text-2xl font-sans-hebrew font-semibold text-primary leading-none">
+                  <span className={`font-sans-hebrew font-semibold text-primary leading-none ${isRow ? "text-base" : "text-2xl"}`}>
                     ₪{pricing.finalPrice.toLocaleString()}
                   </span>
                 ) : (
-                  <span className="text-sm text-muted-foreground">צור קשר לתמחור</span>
+                  <span className={`text-muted-foreground ${isRow ? "text-xs" : "text-sm"}`}>צור קשר לתמחור</span>
                 )}
               </div>
 
@@ -167,10 +177,10 @@ export default function ProductCard({ product, index, layout = "grid" }) {
                   opacity: hovered ? 1 : 0.5,
                 }}
                 transition={{ duration: 0.3 }}
-                className="inline-flex items-center gap-1.5 text-xs tracking-widest text-primary font-light group-hover:text-primary"
+                className={`inline-flex items-center gap-1.5 tracking-widest text-primary font-light group-hover:text-primary ${isRow ? "text-[10px]" : "text-xs"}`}
               >
                 לפרטים
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className={isRow ? "w-3 h-3" : "w-4 h-4"} />
               </motion.span>
             </div>
           </div>

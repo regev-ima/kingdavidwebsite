@@ -1,8 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Gift, Sparkles, Star } from "lucide-react";
+import { Crown, Gift, Sparkles, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CrownOrnament } from "@/components/ui/royal-ornament";
 
 export default function ClubSection() {
   return (
@@ -10,10 +9,10 @@ export default function ClubSection() {
       {/* Rich gold gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-[hsl(42,60%,25%)] via-[hsl(42,55%,30%)] to-[hsl(42,60%,25%)]" />
 
-      {/* Damask pattern overlay */}
-      <div className="absolute inset-0 opacity-[0.06]" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0 L24 8 L32 8 L26 14 L28 22 L20 18 L12 22 L14 14 L8 8 L16 8 Z' fill='%23ffffff' fill-opacity='1'/%3E%3C/svg%3E")`,
-        backgroundSize: '40px 40px',
+      {/* Subtle plus/cross pattern overlay */}
+      <div className="absolute inset-0 opacity-[0.07]" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 8 H13 V11 H16 V13 H13 V16 H11 V13 H8 V11 H11 Z' fill='%23ffffff' fill-opacity='1'/%3E%3C/svg%3E")`,
+        backgroundSize: '24px 24px',
       }} />
 
       <div className="relative py-24 md:py-32">
@@ -25,7 +24,7 @@ export default function ClubSection() {
             viewport={{ once: true }}
           >
             <div className="flex justify-center mb-6">
-              <CrownOrnament className="!text-white/30" />
+              <Crown className="w-10 h-10 text-white/70" fill="currentColor" strokeWidth={1.5} />
             </div>
 
             <h2 className="text-sm tracking-[0.4em] uppercase text-white/50 font-light mb-3">
