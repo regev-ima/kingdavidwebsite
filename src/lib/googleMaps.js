@@ -33,9 +33,30 @@ export function loadGooglePlaces() {
   }
 
   loadPromise = new Promise((resolve, reject) => {
+    const handleReady = async () => {
+      try {
+        // With loading=async, google.maps.places is NOT populated
+        // automatically on script load — you must explicitly import the
+        // library. This also works under the legacy loader so it's safe
+        // in both modes.
+        if (window.google?.maps?.importLibrary) {
+          const places = await window.google.maps.importLibrary('places');
+          resolve(places);
+          return;
+        }
+        if (window.google?.maps?.places) {
+          resolve(window.google.maps.places);
+          return;
+        }
+        reject(new Error('Google Maps Places library unavailable after load'));
+      } catch (err) {
+        reject(err);
+      }
+    };
+
     const existing = document.getElementById(SCRIPT_ID);
     if (existing) {
-      existing.addEventListener('load', () => resolve(window.google.maps.places));
+      existing.addEventListener('load', handleReady);
       existing.addEventListener('error', () => reject(new Error('Google Maps script failed to load')));
       return;
     }
@@ -46,14 +67,8 @@ export function loadGooglePlaces() {
     script.defer = true;
     script.src =
       `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}` +
-      `&libraries=places&language=iw&region=IL&loading=async`;
-    script.onload = () => {
-      if (window.google?.maps?.places) {
-        resolve(window.google.maps.places);
-      } else {
-        reject(new Error('Google Maps Places library unavailable after load'));
-      }
-    };
+      `&libraries=places&language=iw&region=IL&loading=async&v=weekly`;
+    script.onload = handleReady;
     script.onerror = () => reject(new Error('Google Maps script failed to load'));
     document.head.appendChild(script);
   });
