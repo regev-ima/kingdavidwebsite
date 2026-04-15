@@ -139,24 +139,57 @@ export default function ProductDetail() {
   const images = useMemo(() => {
     if (!product) return [];
     const out = [];
-    const pushIfNew = (url) => {
-      if (typeof url !== "string") return;
-      const trimmed = url.trim();
-      if (!trimmed) return;
-      if (!out.includes(trimmed)) out.push(trimmed);
+    const pushIfNew = (value) => {
+      // Accept plain strings…
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed) return;
+        if (!out.includes(trimmed)) out.push(trimmed);
+        return;
+      }
+      // …and common object shapes (CRMs often store gallery items as
+      // { url }, { src }, { image_url }, { href }, etc.)
+      if (value && typeof value === "object") {
+        const candidate =
+          value.url ||
+          value.src ||
+          value.image_url ||
+          value.imageUrl ||
+          value.href ||
+          value.path ||
+          value.public_url ||
+          null;
+        if (candidate) pushIfNew(candidate);
+      }
     };
 
     // Primary/cover image — shown on cards too
     pushIfNew(product.image_url);
 
-    // Any of the common collection columns
-    const collections = [product.images, product.gallery, product.image_urls];
+    // Any of the common collection columns on the product itself
+    const collections = [
+      product.images,
+      product.gallery,
+      product.image_urls,
+      product.media,
+      product.photos,
+    ];
     for (const col of collections) {
       if (Array.isArray(col)) {
         col.forEach(pushIfNew);
       } else if (col && typeof col === "object") {
         // jsonb object -> take its values
         Object.values(col).forEach(pushIfNew);
+      }
+    }
+
+    // Also harvest any images attached to variations. Some CRMs store a
+    // per-size photo (e.g. for beds) on the variation row itself.
+    if (Array.isArray(product.variations)) {
+      for (const v of product.variations) {
+        if (!v) continue;
+        pushIfNew(v.image_url);
+        if (Array.isArray(v.images)) v.images.forEach(pushIfNew);
       }
     }
 
