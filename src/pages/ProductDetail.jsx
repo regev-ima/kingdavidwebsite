@@ -17,6 +17,7 @@ import { computeEffectivePrice } from "@/lib/pricing";
 import SaleCountdown from "@/components/shop/SaleCountdown";
 import HardnessScale from "@/components/shop/HardnessScale";
 import { priceForAddon, addonsForProduct } from "@/api/base44Client";
+import { optimizeImage, optimizeSrcSet } from "@/lib/image";
 
 // Estimated delivery date (14 business days from now, updated)
 function getEstimatedDelivery() {
@@ -137,12 +138,29 @@ export default function ProductDetail() {
 
   const images = useMemo(() => {
     if (!product) return [];
-    const imgs = [];
-    if (product.image_url) imgs.push(product.image_url);
-    if (product.gallery && Array.isArray(product.gallery)) {
-      imgs.push(...product.gallery.filter((g) => g !== product.image_url));
+    const out = [];
+    const pushIfNew = (url) => {
+      if (typeof url !== "string") return;
+      const trimmed = url.trim();
+      if (!trimmed) return;
+      if (!out.includes(trimmed)) out.push(trimmed);
+    };
+
+    // Primary/cover image — shown on cards too
+    pushIfNew(product.image_url);
+
+    // Any of the common collection columns
+    const collections = [product.images, product.gallery, product.image_urls];
+    for (const col of collections) {
+      if (Array.isArray(col)) {
+        col.forEach(pushIfNew);
+      } else if (col && typeof col === "object") {
+        // jsonb object -> take its values
+        Object.values(col).forEach(pushIfNew);
+      }
     }
-    return imgs;
+
+    return out;
   }, [product]);
 
   // Resolve the variation the UI currently shows (by size) so that
@@ -237,35 +255,102 @@ export default function ProductDetail() {
       {/* ===== SECTION 1: Hero — Image Gallery + Product Info ===== */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 md:py-14">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Image Gallery */}
+          {/* Image Gallery — swipeable slider when there are multiple images */}
           <div className="space-y-3">
-            <div className="relative glass-card rounded-2xl overflow-hidden bg-white/[0.03] aspect-square">
+            <div
+              className="relative glass-card rounded-2xl overflow-hidden bg-white/[0.03] aspect-square group/gallery"
+              tabIndex={images.length > 1 ? 0 : -1}
+              onKeyDown={(e) => {
+                if (images.length < 2) return;
+                if (e.key === "ArrowLeft") setCurrentImageIdx((p) => (p + 1) % images.length);
+                if (e.key === "ArrowRight") setCurrentImageIdx((p) => (p - 1 + images.length) % images.length);
+              }}
+            >
               {images.length > 0 ? (
-                <img src={images[currentImageIdx]} alt={product.name} className="w-full h-full object-cover" />
+                <motion.img
+                  key={images[currentImageIdx]}
+                  src={optimizeImage(images[currentImageIdx], { width: 1000, quality: 78 })}
+                  srcSet={optimizeSrcSet(images[currentImageIdx], [600, 900, 1200], { quality: 78 })}
+                  sizes="(max-width: 1024px) 100vw, 600px"
+                  alt={product.name}
+                  loading="eager"
+                  decoding="async"
+                  initial={{ opacity: 0, scale: 1.02 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-8xl font-playfair text-primary/20">KD</span>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-8xl font-cormorant text-primary/20">KD</span>
                 </div>
               )}
+
               {discount > 0 && (
-                <Badge className="absolute top-4 right-4 bg-destructive text-destructive-foreground text-base px-4 py-1 font-bold">-{discount}%</Badge>
+                <Badge className="absolute top-4 right-4 bg-destructive text-destructive-foreground text-base px-4 py-1 font-bold shadow-lg">-{discount}%</Badge>
               )}
+
               {images.length > 1 && (
                 <>
-                  <button onClick={() => setCurrentImageIdx((p) => (p + 1) % images.length)} className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full glass flex items-center justify-center text-foreground/70 hover:text-foreground transition-colors">
+                  <button
+                    onClick={() => setCurrentImageIdx((p) => (p + 1) % images.length)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-background/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground/70 hover:text-foreground hover:border-primary/40 transition-all opacity-80 group-hover/gallery:opacity-100"
+                    aria-label="תמונה הבאה"
+                  >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
-                  <button onClick={() => setCurrentImageIdx((p) => (p - 1 + images.length) % images.length)} className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full glass flex items-center justify-center text-foreground/70 hover:text-foreground transition-colors">
+                  <button
+                    onClick={() => setCurrentImageIdx((p) => (p - 1 + images.length) % images.length)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-background/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground/70 hover:text-foreground hover:border-primary/40 transition-all opacity-80 group-hover/gallery:opacity-100"
+                    aria-label="תמונה קודמת"
+                  >
                     <ChevronRight className="w-5 h-5" />
                   </button>
+
+                  {/* Counter */}
+                  <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-background/60 backdrop-blur-md border border-white/10 text-xs text-foreground/75 font-mono tabular-nums" dir="ltr">
+                    {currentImageIdx + 1} / {images.length}
+                  </div>
+
+                  {/* Dots — clickable */}
+                  <div className="absolute bottom-3 right-1/2 translate-x-1/2 flex items-center gap-1.5" aria-hidden>
+                    {images.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentImageIdx(idx)}
+                        className={`h-1.5 rounded-full transition-all ${
+                          idx === currentImageIdx
+                            ? "w-6 bg-primary"
+                            : "w-1.5 bg-foreground/25 hover:bg-foreground/50"
+                        }`}
+                        aria-label={`תמונה ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
                 </>
               )}
             </div>
+
             {images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hidden pb-1">
                 {images.map((img, idx) => (
-                  <button key={idx} onClick={() => setCurrentImageIdx(idx)} className={`w-20 h-20 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${idx === currentImageIdx ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"}`}>
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentImageIdx(idx)}
+                    className={`relative w-20 h-20 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${
+                      idx === currentImageIdx
+                        ? "border-primary"
+                        : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                    aria-label={`תמונה ${idx + 1}`}
+                  >
+                    <img
+                      src={optimizeImage(img, { width: 160, quality: 70 })}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>

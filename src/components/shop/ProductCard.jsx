@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { computeEffectivePrice } from "@/lib/pricing";
 import SaleCountdown from "@/components/shop/SaleCountdown";
 import HardnessScale from "@/components/shop/HardnessScale";
+import { optimizeImage, optimizeSrcSet } from "@/lib/image";
 
 export default function ProductCard({ product, index }) {
   const [hovered, setHovered] = useState(false);
@@ -37,9 +38,12 @@ export default function ProductCard({ product, index }) {
           <div className="relative aspect-[4/5] overflow-hidden shrink-0">
             {product.image_url ? (
               <motion.img
-                src={product.image_url}
+                src={optimizeImage(product.image_url, { width: 600, quality: 72 })}
+                srcSet={optimizeSrcSet(product.image_url, [400, 600, 900], { quality: 72 })}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 alt={product.name}
                 loading="lazy"
+                decoding="async"
                 animate={{ scale: hovered ? 1.08 : 1 }}
                 transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
                 className="absolute inset-0 w-full h-full object-cover"

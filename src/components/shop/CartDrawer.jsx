@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/CartContext";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { optimizeImage } from "@/lib/image";
 
 export default function CartDrawer({ open, onClose }) {
   const {
@@ -68,7 +69,7 @@ export default function CartDrawer({ open, onClose }) {
                         {/* Thumbnail */}
                         <div className="w-16 h-16 rounded-lg overflow-hidden bg-white/[0.03] shrink-0">
                           {item.product.image_url ? (
-                            <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
+                            <img src={optimizeImage(item.product.image_url, { width: 160, quality: 70 })} alt={item.product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-primary/20 font-playfair text-lg">KD</div>
                           )}

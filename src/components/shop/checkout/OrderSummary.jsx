@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ChevronDown, ChevronUp, Tag } from "lucide-react";
 import { useCart } from "@/lib/CartContext";
+import { optimizeImage } from "@/lib/image";
 
 export default function OrderSummary({ collapsibleOnMobile = true }) {
   const {
@@ -27,7 +28,7 @@ export default function OrderSummary({ collapsibleOnMobile = true }) {
           <div key={idx} className="flex gap-3 items-start">
             <div className="w-14 h-14 rounded-lg overflow-hidden bg-white/[0.03] shrink-0">
               {item.product.image_url ? (
-                <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
+                <img src={optimizeImage(item.product.image_url, { width: 120, quality: 70 })} alt={item.product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-primary/20 font-playfair text-sm">KD</div>
               )}
