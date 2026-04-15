@@ -18,10 +18,28 @@ export default function Contact() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await base44.entities.ContactInquiry.create(form);
-    setLoading(false);
-    setSubmitted(true);
-    toast({ title: "הפנייה נשלחה בהצלחה!", description: "ניצור אתכם קשר בהקדם." });
+    try {
+      await base44.entities.Lead.create({
+        full_name: form.name,
+        phone: form.phone,
+        email: form.email || null,
+        subject: form.subject || null,
+        message: form.message,
+        source: "website",
+        source_form: "contact_page",
+        tags: ["אתר"],
+      });
+      setSubmitted(true);
+      toast({ title: "הפנייה נשלחה בהצלחה!", description: "ניצור אתכם קשר בהקדם." });
+    } catch (err) {
+      toast({
+        title: "אירעה שגיאה",
+        description: "לא הצלחנו לשלוח את הפנייה. נסו שוב או פנו אלינו בטלפון.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
