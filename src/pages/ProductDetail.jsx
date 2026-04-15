@@ -335,26 +335,30 @@ export default function ProductDetail() {
                 <span className="flex items-center gap-1.5"><ArrowUpDown className="w-4 h-4 text-primary" /> גובה: {product.height_cm} ס"מ</span>
               )}
               {product.hardness && (
-                <span className="flex items-center gap-1.5"><Layers className="w-4 h-4 text-primary" /> קשיחות: {product.hardness}/10 ({product.hardness > 6 ? "קשיח" : product.hardness > 4 ? "חצי-קשיח" : "רך"})</span>
+                <span className="flex items-center gap-1.5"><Layers className="w-4 h-4 text-primary" /> קשיחות: {product.hardness}/10 ({product.hardness > 7 ? "קשיח" : product.hardness > 5 ? "בינוני-קשיח" : product.hardness > 3 ? "בינוני" : "רך"})</span>
               )}
-              <span className="flex items-center gap-1.5"><Moon className="w-4 h-4 text-primary" /> 30 לילות ניסיון</span>
-              <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-primary" /> אחריות {product.warranty_years || 10} שנה</span>
+              {product.has_trial_period && (
+                <span className="flex items-center gap-1.5"><Moon className="w-4 h-4 text-primary" /> 30 לילות ניסיון</span>
+              )}
+              <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-primary" /> אחריות {product.warranty_years ?? 10} שנה</span>
             </div>
 
             {/* Trust Signals — moved here, below specs */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className={`grid ${product.has_trial_period ? "grid-cols-3" : "grid-cols-2"} gap-3 mb-6`}>
               <div className="glass rounded-xl p-3 text-center">
                 <Shield className="w-5 h-5 text-primary mx-auto mb-1" />
-                <span className="text-xs text-foreground/70">אחריות {product.warranty_years || 20} שנה</span>
+                <span className="text-xs text-foreground/70">אחריות {product.warranty_years ?? 10} שנה</span>
               </div>
               <div className="glass rounded-xl p-3 text-center">
                 <Truck className="w-5 h-5 text-primary mx-auto mb-1" />
                 <span className="text-xs text-foreground/70">משלוח עד הבית</span>
               </div>
-              <div className="glass rounded-xl p-3 text-center">
-                <RotateCcw className="w-5 h-5 text-primary mx-auto mb-1" />
-                <span className="text-xs text-foreground/70">30 לילות ניסיון</span>
-              </div>
+              {product.has_trial_period && (
+                <div className="glass rounded-xl p-3 text-center">
+                  <RotateCcw className="w-5 h-5 text-primary mx-auto mb-1" />
+                  <span className="text-xs text-foreground/70">30 לילות ניסיון</span>
+                </div>
+              )}
             </div>
 
 
@@ -551,7 +555,9 @@ export default function ProductDetail() {
                     </svg>
                   ),
                 },
-              ].map((item, i) => (
+              ]
+                .filter((item) => !(item.title?.includes("ניסיון") && !product.has_trial_period))
+                .map((item, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 16 }}
@@ -772,7 +778,7 @@ export default function ProductDetail() {
         <div className="py-16 md:py-20">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
             <h2 className="text-2xl font-bold text-foreground mb-8 text-center">משלוחים ואספקה</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
+            <div className={`grid grid-cols-1 ${product.has_trial_period ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-5 mb-10`}>
               <div className="glass-card rounded-2xl p-6 text-center border border-primary/10">
                 <Truck className="w-8 h-8 text-primary mx-auto mb-3" />
                 <p className="font-bold text-foreground mb-1">זמני אספקה</p>
@@ -785,11 +791,13 @@ export default function ProductDetail() {
                 <p className="text-sm text-foreground/60">מזרן: 250 ₪</p>
                 <p className="text-sm text-foreground/60">מיטות כולל הרכבה: 500 ₪</p>
               </div>
-              <div className="glass-card rounded-2xl p-6 text-center border border-primary/10">
-                <RotateCcw className="w-8 h-8 text-primary mx-auto mb-3" />
-                <p className="font-bold text-foreground mb-1">30 לילות ניסיון</p>
-                <p className="text-sm text-foreground/60">לא מרוצים? החזרה בחינם על חשבוננו!</p>
-              </div>
+              {product.has_trial_period && (
+                <div className="glass-card rounded-2xl p-6 text-center border border-primary/10">
+                  <RotateCcw className="w-8 h-8 text-primary mx-auto mb-3" />
+                  <p className="font-bold text-foreground mb-1">30 לילות ניסיון</p>
+                  <p className="text-sm text-foreground/60">לא מרוצים? החזרה בחינם על חשבוננו!</p>
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-center gap-2 text-foreground/70">
               <Truck className="w-5 h-5 text-primary" />
@@ -806,7 +814,10 @@ export default function ProductDetail() {
         </div>
       </FadeInSection>
 
-      {/* ===== SECTION 7.5: 30 Nights Trial Banner ===== */}
+      {/* ===== SECTION 7.5: 30 Nights Trial Banner — only when product
+           opts in to the trial program via CRM has_trial_period flag ===== */}
+      {product.has_trial_period && (
+      <>
       <SectionDivider />
       <FadeInSection>
         <div className="relative overflow-hidden rounded-3xl mx-4 sm:mx-8 lg:mx-16" style={{ background: "linear-gradient(160deg, #0d2018 0%, #0a1a10 40%, #0f2a1a 100%)", minHeight: "520px" }}>
@@ -905,6 +916,8 @@ export default function ProductDetail() {
           </div>
         </div>
       </FadeInSection>
+      </>
+      )}
 
       {/* ===== SECTION 8: Reviews Carousel ===== */}
       <SectionDivider />

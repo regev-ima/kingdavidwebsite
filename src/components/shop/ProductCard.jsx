@@ -92,11 +92,9 @@ export default function ProductCard({ product, index }) {
               <p className="text-[11px] tracking-[0.22em] text-muted-foreground uppercase font-light">
                 {product.category}
               </p>
-              {product.warranty_years && (
-                <span className="text-[10px] text-primary/70 font-light">
-                  {product.warranty_years} שנות אחריות
-                </span>
-              )}
+              <span className="text-[10px] text-primary/70 font-light">
+                {product.warranty_years ?? 10} שנות אחריות
+              </span>
             </div>
 
             <h3 className="font-cormorant text-xl leading-tight font-semibold text-foreground group-hover:text-primary transition-colors">
