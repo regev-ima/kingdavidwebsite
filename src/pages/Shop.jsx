@@ -451,7 +451,7 @@ export default function Shop() {
 
             {/* Products Grid */}
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6">
                 {Array(8).fill(0).map((_, i) => (
                   <div key={i} className="rounded-2xl overflow-hidden royal-card">
                     <div className="aspect-[4/5] shimmer" />
@@ -483,7 +483,7 @@ export default function Shop() {
                   className={
                     viewMode === "list"
                       ? "flex flex-col gap-4"
-                      : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+                      : "grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6"
                   }
                 >
                   {filtered.map((product, i) => (
