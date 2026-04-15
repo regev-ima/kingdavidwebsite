@@ -111,7 +111,7 @@ export default function ProductCard({ product, index, layout = "grid" }) {
               <p className={`text-muted-foreground uppercase font-light ${isRow ? "text-[9px] tracking-[0.15em]" : "text-[9px] tracking-[0.1em] sm:text-[11px] sm:tracking-[0.22em]"}`}>
                 {product.category}
               </p>
-              <span className={`text-primary/70 font-light ${isRow ? "text-[9px]" : "text-[8px] sm:text-[10px]"}`}>
+              <span className={`text-primary/80 font-medium ${isRow ? "text-[9px]" : "text-[8px] sm:text-[10px]"}`}>
                 {product.warranty_years ?? 10} שנות אחריות
               </span>
             </div>
@@ -177,7 +177,7 @@ export default function ProductCard({ product, index, layout = "grid" }) {
                   opacity: hovered ? 1 : 0.5,
                 }}
                 transition={{ duration: 0.3 }}
-                className={`inline-flex items-center gap-1 sm:gap-1.5 tracking-wider sm:tracking-widest text-primary font-light group-hover:text-primary ${isRow ? "text-[10px]" : "text-[10px] sm:text-xs"}`}
+                className={`inline-flex items-center gap-1 sm:gap-1.5 tracking-wider sm:tracking-widest text-primary font-semibold group-hover:text-primary ${isRow ? "text-[10px]" : "text-[10px] sm:text-xs"}`}
               >
                 לפרטים
                 <ArrowLeft className={isRow ? "w-3 h-3" : "w-3 h-3 sm:w-4 sm:h-4"} />
