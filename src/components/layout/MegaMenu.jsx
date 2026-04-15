@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { computeEffectivePrice } from "@/lib/pricing";
+import { optimizeImage } from "@/lib/image";
 
 /**
  * Full-width dropdown preview rendered below the sticky navbar.
@@ -85,10 +86,11 @@ export default function MegaMenu({ open, category, onMouseEnter, onMouseLeave, o
                                       group-hover:shadow-[0_12px_32px_-12px_hsl(42_70%_55%_/_0.25)]">
                         {p.image_url ? (
                           <img
-                            src={p.image_url}
+                            src={optimizeImage(p.image_url, { width: 300, quality: 70 })}
                             alt={p.name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-card">

@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Phone, ShoppingCart, Sun, Moon } from "lucide-react";
+import { Menu, X, Phone, ShoppingCart, Sun, Moon, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/lib/CartContext";
 import { useTheme } from "@/lib/ThemeContext";
 import CartDrawer from "@/components/shop/CartDrawer";
+import MegaMenu from "@/components/layout/MegaMenu";
 
+// Links with `megaMenu: <Hebrew category group>` open a product preview
+// dropdown on hover.
 const navLinks = [
   { label: "בית", path: "/Home" },
   { label: "אודות", path: "/About" },
-  { label: "מזרנים", path: "/Shop/מזרנים" },
-  { label: "מיטות", path: "/Shop/מיטות" },
+  { label: "מזרנים", path: "/Shop/מזרנים", megaMenu: "מזרנים" },
+  { label: "מיטות", path: "/Shop/מיטות", megaMenu: "מיטות" },
   { label: "מבצעים", path: "/Shop/מבצעים" },
   { label: "שאלות ותשובות", path: "/FAQ" },
   { label: "ביקורות", path: "/Reviews" },
@@ -21,6 +24,8 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [openMenu, setOpenMenu] = useState(null); // "מזרנים" | "מיטות" | null
+  const closeTimer = useRef(null);
   const location = useLocation();
   const { cartCount } = useCart();
   const { theme, toggleTheme } = useTheme();
@@ -31,9 +36,32 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const linkClass = (path) =>
-    `px-3 py-2 text-[13px] tracking-wide font-light transition-all ${
-      location.pathname === path
+  // Close the mega menu whenever the route changes
+  useEffect(() => {
+    setOpenMenu(null);
+  }, [location.pathname, location.search]);
+
+  const openMega = (key) => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setOpenMenu(key);
+  };
+  const scheduleClose = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpenMenu(null), 140);
+  };
+  const cancelClose = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  };
+
+  const linkClass = (path, active) =>
+    `relative px-3 py-2 text-[13px] tracking-wide font-light transition-all flex items-center gap-1 ${
+      active
         ? "text-primary"
         : "text-foreground/60 hover:text-primary"
     }`;
@@ -53,7 +81,7 @@ export default function Navbar() {
         </div>
 
         {/* Main Nav */}
-        <div className={`transition-all duration-300 ${
+        <div className={`relative transition-all duration-300 ${
           scrolled
             ? "bg-[hsl(225,20%,4%)]/95 backdrop-blur-lg shadow-lg"
             : "bg-[hsl(225,20%,4%)]/60 backdrop-blur-md"
@@ -74,11 +102,33 @@ export default function Navbar() {
 
               {/* Desktop nav links — absolutely centered */}
               <div className="hidden lg:flex items-center gap-0.5 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                {navLinks.map((link) => (
-                  <Link key={link.path} to={link.path} className={linkClass(link.path)}>
-                    {link.label}
-                  </Link>
-                ))}
+                {navLinks.map((link) => {
+                  const active = location.pathname === link.path;
+                  const hasMenu = Boolean(link.megaMenu);
+                  return (
+                    <div
+                      key={link.path}
+                      onMouseEnter={() => hasMenu && openMega(link.megaMenu)}
+                      onMouseLeave={() => hasMenu && scheduleClose()}
+                      className="relative"
+                    >
+                      <Link to={link.path} className={linkClass(link.path, active)}>
+                        {link.label}
+                        {hasMenu && (
+                          <ChevronDown
+                            className={`w-3 h-3 transition-transform ${
+                              openMenu === link.megaMenu ? "rotate-180 text-primary" : ""
+                            }`}
+                          />
+                        )}
+                      </Link>
+                      {/* Active underline */}
+                      {active && (
+                        <span className="absolute bottom-0 left-3 right-3 h-px bg-primary/70" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Actions — left side (RTL end). Visual order right->left:
@@ -140,6 +190,22 @@ export default function Navbar() {
               </div>
             </div>
           </div>
+
+          {/* Mega menus — absolutely positioned below the main nav bar */}
+          <MegaMenu
+            open={openMenu === "מזרנים"}
+            category="מזרנים"
+            onMouseEnter={cancelClose}
+            onMouseLeave={scheduleClose}
+            onNavigate={() => setOpenMenu(null)}
+          />
+          <MegaMenu
+            open={openMenu === "מיטות"}
+            category="מיטות"
+            onMouseEnter={cancelClose}
+            onMouseLeave={scheduleClose}
+            onNavigate={() => setOpenMenu(null)}
+          />
         </div>
 
         {/* Mobile Menu */}
