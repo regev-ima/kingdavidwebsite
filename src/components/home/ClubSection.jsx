@@ -10,7 +10,7 @@ export default function ClubSection() {
       <div className="absolute inset-0 bg-gradient-to-b from-[hsl(42,60%,25%)] via-[hsl(42,55%,30%)] to-[hsl(42,60%,25%)]" />
 
       {/* Subtle plus/cross pattern overlay */}
-      <div className="absolute inset-0 opacity-[0.07]" style={{
+      <div className="absolute inset-0 opacity-[0.03]" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 8 H13 V11 H16 V13 H13 V16 H11 V13 H8 V11 H11 Z' fill='%23ffffff' fill-opacity='1'/%3E%3C/svg%3E")`,
         backgroundSize: '24px 24px',
       }} />
