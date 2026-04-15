@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, SlidersHorizontal, X, LayoutGrid, Rows } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ProductCard from "../components/shop/ProductCard";
 import { fallbackProducts } from "@/data/fallbackProducts";
@@ -34,6 +34,9 @@ export default function Shop() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("default");
   const [sizeFilter, setSizeFilter] = useState("all");
+  const [hardnessFilter, setHardnessFilter] = useState("all"); // all | soft | medium | firm
+  const [priceFilter, setPriceFilter] = useState("all"); // all | lt2500 | 2500-5000 | 5000-8000 | gt8000
+  const [viewMode, setViewMode] = useState("grid"); // grid | list
 
   const { data: apiProducts, isLoading } = useQuery({
     queryKey: ["products"],
@@ -78,15 +81,57 @@ export default function Shop() {
       );
     }
 
+    if (hardnessFilter && hardnessFilter !== "all") {
+      // product.hardness is a 1..10 scale (or a Hebrew label, which we
+      // normalise the same way ProductCard does).
+      const hardnessMap = { "רך": 3, "בינוני": 5, "בינוני-קשיח": 7, "קשיח": 9 };
+      result = result.filter((p) => {
+        if (p.hardness == null) return false;
+        const score = typeof p.hardness === "number" ? p.hardness : hardnessMap[p.hardness] ?? null;
+        if (score == null) return false;
+        if (hardnessFilter === "soft") return score <= 3;
+        if (hardnessFilter === "medium") return score >= 4 && score <= 6;
+        if (hardnessFilter === "firm") return score >= 7;
+        return true;
+      });
+    }
+
+    if (priceFilter && priceFilter !== "all") {
+      result = result.filter((p) => {
+        const price = Number(p.sale_price || p.price || 0);
+        if (!price) return false;
+        if (priceFilter === "lt2500") return price < 2500;
+        if (priceFilter === "2500-5000") return price >= 2500 && price < 5000;
+        if (priceFilter === "5000-8000") return price >= 5000 && price < 8000;
+        if (priceFilter === "gt8000") return price >= 8000;
+        return true;
+      });
+    }
+
     if (sortBy === "price-asc") result = [...result].sort((a, b) => (a.sale_price || a.price) - (b.sale_price || b.price));
     if (sortBy === "price-desc") result = [...result].sort((a, b) => (b.sale_price || b.price) - (a.sale_price || a.price));
     if (sortBy === "best-sellers") result = [...result].sort((a, b) => (b.sales_count || 0) - (a.sales_count || 0));
     if (sortBy === "newest") result = [...result].sort((a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
 
     return result;
-  }, [products, activeCategory, search, sortBy, sizeFilter]);
+  }, [products, activeCategory, search, sortBy, sizeFilter, hardnessFilter, priceFilter]);
 
-  const hasActiveFilters = activeCategory !== "הכל" || search || sizeFilter !== "all" || sortBy !== "default";
+  const hasActiveFilters =
+    activeCategory !== "הכל" ||
+    search ||
+    sizeFilter !== "all" ||
+    hardnessFilter !== "all" ||
+    priceFilter !== "all" ||
+    sortBy !== "default";
+
+  const clearFilters = () => {
+    setActiveCategory("הכל");
+    setSearch("");
+    setSizeFilter("all");
+    setHardnessFilter("all");
+    setPriceFilter("all");
+    setSortBy("default");
+  };
 
   return (
     <div className="min-h-screen">
@@ -197,45 +242,78 @@ export default function Shop() {
                 </Select>
               </div>
 
-              {/* Sort */}
+              {/* Hardness */}
               <div>
                 <p className="text-[11px] tracking-[0.25em] uppercase text-foreground/50 font-light mb-2">
-                  מיון
+                  דרגת קושי
                 </p>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full h-10">
-                    <SlidersHorizontal className="w-3.5 h-3.5 ml-1.5 shrink-0" />
-                    <SelectValue placeholder="מיון" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">ברירת מחדל</SelectItem>
-                    <SelectItem value="price-asc">מחיר: נמוך → גבוה</SelectItem>
-                    <SelectItem value="price-desc">מחיר: גבוה → נמוך</SelectItem>
-                    <SelectItem value="best-sellers">הנמכרים ביותר</SelectItem>
-                    <SelectItem value="newest">חדשים</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { value: "all", label: "הכל" },
+                    { value: "soft", label: "רך" },
+                    { value: "medium", label: "בינוני" },
+                    { value: "firm", label: "קשיח" },
+                  ].map((opt) => {
+                    const active = hardnessFilter === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => setHardnessFilter(opt.value)}
+                        className={`h-9 rounded-lg text-xs transition-all ${
+                          active
+                            ? "bg-primary text-primary-foreground font-semibold"
+                            : "border border-primary/15 text-foreground/70 hover:border-primary/40 hover:text-foreground"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Count + clear */}
-              <div className="pt-4 border-t border-primary/10 flex items-center justify-between">
-                <span className="text-xs text-foreground/55">
-                  {filtered.length} מוצרים
-                </span>
-                {hasActiveFilters && (
-                  <button
-                    onClick={() => {
-                      setActiveCategory("הכל");
-                      setSearch("");
-                      setSizeFilter("all");
-                      setSortBy("default");
-                    }}
-                    className="text-xs text-primary hover:text-primary/70 transition-colors underline-offset-2 hover:underline"
-                  >
-                    נקה סינון
-                  </button>
-                )}
+              {/* Price range */}
+              <div>
+                <p className="text-[11px] tracking-[0.25em] uppercase text-foreground/50 font-light mb-2">
+                  טווח מחיר
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  {[
+                    { value: "all", label: "הכל" },
+                    { value: "lt2500", label: "עד ₪2,500" },
+                    { value: "2500-5000", label: "₪2,500 — ₪5,000" },
+                    { value: "5000-8000", label: "₪5,000 — ₪8,000" },
+                    { value: "gt8000", label: "₪8,000 ומעלה" },
+                  ].map((opt) => {
+                    const active = priceFilter === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => setPriceFilter(opt.value)}
+                        className={`h-9 rounded-lg text-xs transition-all text-right px-3 ${
+                          active
+                            ? "bg-primary text-primary-foreground font-semibold"
+                            : "border border-primary/15 text-foreground/70 hover:border-primary/40 hover:text-foreground"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Clear */}
+              {hasActiveFilters && (
+                <div className="pt-4 border-t border-primary/10">
+                  <button
+                    onClick={clearFilters}
+                    className="w-full h-10 rounded-lg border border-primary/20 text-xs text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    נקה את כל הסינונים
+                  </button>
+                </div>
+              )}
             </div>
           </aside>
 
@@ -306,8 +384,31 @@ export default function Shop() {
                   </SelectContent>
                 </Select>
 
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="text-xs text-primary hover:text-primary/70 transition-colors underline-offset-2 hover:underline shrink-0 px-2"
+                  >
+                    נקה סינון
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Toolbar — sits above the leftmost product: count on the
+                LEFT (visual), sort + view toggle on the RIGHT. */}
+            <div className="flex items-center justify-between gap-3 mb-5" dir="ltr">
+              {/* Count (visually LEFT) */}
+              <span className="text-sm text-foreground/60 font-light" dir="rtl">
+                <span className="text-foreground font-semibold">{filtered.length}</span>{" "}
+                מוצרים
+              </span>
+
+              {/* Right cluster — sort + view toggle */}
+              <div className="flex items-center gap-2" dir="rtl">
+                {/* Sort */}
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-40 h-10 shrink-0">
+                  <SelectTrigger className="w-44 h-10">
                     <SlidersHorizontal className="w-3.5 h-3.5 ml-1.5 shrink-0" />
                     <SelectValue placeholder="מיון" />
                   </SelectTrigger>
@@ -320,23 +421,30 @@ export default function Shop() {
                   </SelectContent>
                 </Select>
 
-                <div className="flex items-center gap-3 mr-auto px-1">
-                  <span className="text-xs text-foreground/50 whitespace-nowrap">
-                    {filtered.length} מוצרים
-                  </span>
-                  {hasActiveFilters && (
-                    <button
-                      onClick={() => {
-                        setActiveCategory("הכל");
-                        setSearch("");
-                        setSizeFilter("all");
-                        setSortBy("default");
-                      }}
-                      className="text-xs text-primary hover:text-primary/70 transition-colors underline-offset-2 hover:underline"
-                    >
-                      נקה סינון
-                    </button>
-                  )}
+                {/* View toggle — grid vs single-row list */}
+                <div className="hidden sm:flex items-center h-10 rounded-lg border border-primary/15 overflow-hidden">
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    aria-label="תצוגת גריד"
+                    className={`h-full px-3 flex items-center justify-center transition-colors ${
+                      viewMode === "grid"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-foreground/60 hover:text-foreground"
+                    }`}
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("list")}
+                    aria-label="תצוגת שורה"
+                    className={`h-full px-3 flex items-center justify-center transition-colors border-r border-primary/15 ${
+                      viewMode === "list"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-foreground/60 hover:text-foreground"
+                    }`}
+                  >
+                    <Rows className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -361,12 +469,7 @@ export default function Shop() {
                 <p className="text-foreground/60 text-lg font-light">לא נמצאו מוצרים</p>
                 {hasActiveFilters && (
                   <button
-                    onClick={() => {
-                      setActiveCategory("הכל");
-                      setSearch("");
-                      setSizeFilter("all");
-                      setSortBy("default");
-                    }}
+                    onClick={clearFilters}
                     className="mt-4 text-primary text-sm tracking-wide hover:underline"
                   >
                     נקה את כל הסינונים
@@ -377,10 +480,19 @@ export default function Shop() {
               <AnimatePresence mode="popLayout">
                 <motion.div
                   layout
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+                  className={
+                    viewMode === "list"
+                      ? "flex flex-col gap-4"
+                      : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+                  }
                 >
                   {filtered.map((product, i) => (
-                    <ProductCard key={product.id} product={product} index={i} />
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      index={i}
+                      layout={viewMode === "list" ? "row" : "grid"}
+                    />
                   ))}
                 </motion.div>
               </AnimatePresence>
