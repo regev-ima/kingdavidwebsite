@@ -15,6 +15,7 @@ import ProductReviewsCarousel from "@/components/shop/ProductReviewsCarousel";
 import { motion } from "framer-motion";
 import { computeEffectivePrice } from "@/lib/pricing";
 import SaleCountdown from "@/components/shop/SaleCountdown";
+import { priceForAddon, addonsForProduct } from "@/api/base44Client";
 
 // Estimated delivery date (14 business days from now, updated)
 function getEstimatedDelivery() {
@@ -70,7 +71,8 @@ export default function ProductDetail() {
   const navigate = useNavigate();
 
   const [selectedSize, setSelectedSize] = useState("");
-  const [withStorage, setWithStorage] = useState(false);
+  const [withStorage, setWithStorage] = useState(false); // legacy flag, still used by bed UI
+  const [selectedAddons, setSelectedAddons] = useState(() => ({})); // { [addonId]: true }
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -90,6 +92,18 @@ export default function ProductDetail() {
   });
 
   const product = apiProduct || fallbackProducts.find(p => p.id === productId) || null;
+
+  // Addons (cached globally by the wrapper — one RPC hit for the whole site)
+  const { data: allAddons = [] } = useQuery({
+    queryKey: ["addons"],
+    queryFn: () => base44.entities.Addon.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const applicableAddons = useMemo(
+    () => addonsForProduct(allAddons, product || {}),
+    [allAddons, product]
+  );
 
   const DEFAULT_SIZES = ["80×190", "90×190", "100×190", "120×190", "140×190", "160×190", "180×190", "200×200"];
 
@@ -165,7 +179,15 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     if (!product) return;
     const size = selectedSize || (product.available_sizes?.[0]) || "";
-    addItem(product, size, quantity, withStorage);
+    // Build the selected-addons payload at the variation price
+    const addonsPayload = applicableAddons
+      .filter((a) => selectedAddons[a.id])
+      .map((a) => ({
+        id: a.id,
+        name: a.name,
+        price: Number(priceForAddon(a, selectedVariation) || 0),
+      }));
+    addItem(product, size, quantity, withStorage, addonsPayload);
     setAddedToCart(true);
     // Don't reset — button stays as "checkout" permanently
   };
@@ -337,19 +359,8 @@ export default function ProductDetail() {
 
 
 
-            {isBed && (
-              <div className="mb-6">
-                <label className="text-sm font-medium text-foreground/80 mb-2 block">ארגז מצעים</label>
-                <div className="flex gap-2">
-                  <button onClick={() => setWithStorage(false)} className={`flex-1 min-h-[44px] rounded-xl text-sm font-medium transition-all ${!withStorage ? "bg-primary text-primary-foreground" : "glass text-foreground/70"}`}>
-                    ללא ארגז
-                  </button>
-                  <button onClick={() => setWithStorage(true)} className={`flex-1 min-h-[44px] rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${withStorage ? "bg-primary text-primary-foreground" : "glass text-foreground/70"}`}>
-                    <Package className="w-4 h-4" /> עם ארגז מצעים
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Legacy "ארגז מצעים" toggle replaced by the full Addons list
+                below (fed from the CRM's product_addons table). */}
 
             {/* Size + Quantity in one row */}
             <div className="flex items-center gap-4 mb-6">
@@ -375,6 +386,69 @@ export default function ProductDetail() {
                 </div>
               </div>
             </div>
+
+            {/* Addons — driven by CRM product_addons (only those where
+                applicable_categories matches this product) */}
+            {applicableAddons.length > 0 && (
+              <div className="mb-6 space-y-2">
+                <label className="text-sm font-medium text-foreground/80 block">תוספות</label>
+                {applicableAddons.map((addon) => {
+                  const price = priceForAddon(addon, selectedVariation);
+                  const checked = Boolean(selectedAddons[addon.id]);
+                  return (
+                    <button
+                      key={addon.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedAddons((prev) => ({ ...prev, [addon.id]: !prev[addon.id] }))
+                      }
+                      className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all text-right ${
+                        checked
+                          ? "border-primary/60 bg-primary/[0.06] ring-1 ring-primary/20"
+                          : "border-white/[0.08] glass hover:border-white/[0.15]"
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-colors ${
+                        checked ? "bg-primary text-primary-foreground" : "border border-white/20"
+                      }`}>
+                        {checked && <Plus className="w-3 h-3 rotate-45" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Package className="w-4 h-4 text-primary/70" />
+                          <span className="font-medium text-foreground text-sm">{addon.name}</span>
+                        </div>
+                        {addon.description && (
+                          <p className="text-xs text-foreground/55 mt-1 line-clamp-2">{addon.description}</p>
+                        )}
+                      </div>
+                      <span className="text-primary font-semibold text-sm shrink-0">
+                        {price > 0 ? `+₪${Number(price).toLocaleString()}` : "חינם"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Live total (product + addons) */}
+            {(() => {
+              const perUnit =
+                pricing.finalPrice +
+                applicableAddons.reduce(
+                  (sum, a) => sum + (selectedAddons[a.id] ? priceForAddon(a, selectedVariation) : 0),
+                  0
+                );
+              const total = perUnit * quantity;
+              return (
+                <div className="mb-4 flex items-baseline justify-between pt-3 border-t border-foreground/10">
+                  <span className="text-sm text-foreground/60 font-light">סה״כ לתשלום</span>
+                  <span className="text-2xl font-semibold text-primary">
+                    ₪{total.toLocaleString()}
+                  </span>
+                </div>
+              );
+            })()}
 
             {/* Add to Cart / Go to Checkout */}
             {!addedToCart ? (

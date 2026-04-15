@@ -183,6 +183,78 @@ async function loadAllProducts() {
   return productsCachePromise;
 }
 
+// ---------------------------------------------------------------------
+// Addons cache (product_addons + product_addon_prices)
+// ---------------------------------------------------------------------
+
+let addonsCachePromise = null;
+
+async function loadAllAddons() {
+  if (!isSupabaseConfigured) return [];
+  if (!addonsCachePromise) {
+    addonsCachePromise = (async () => {
+      const { data, error } = await supabase.rpc('website_get_addons');
+      if (error) {
+        console.error('[base44Client shim] website_get_addons failed:', error.message);
+        addonsCachePromise = null;
+        return [];
+      }
+      return (data || []).map((row) => ({
+        ...row,
+        // Prefer VAT-inclusive price when present.
+        effective_base_price: Number(row.final_price ?? row.base_price ?? 0),
+      }));
+    })();
+  }
+  return addonsCachePromise;
+}
+
+/**
+ * Resolve the price a single addon charges for the currently selected variation.
+ * Priority:
+ *   1. product_addon_prices (variation_prices map, by variation.id)
+ *   2. size_prices jsonb by variation.name ("160x200") or variation.id
+ *   3. addon.final_price
+ *   4. addon.base_price
+ */
+export function priceForAddon(addon, variation) {
+  if (!addon) return 0;
+  if (variation?.id && addon.variation_prices && addon.variation_prices[variation.id] != null) {
+    return Number(addon.variation_prices[variation.id]);
+  }
+  if (variation && addon.size_prices && typeof addon.size_prices === 'object') {
+    const byId = variation.id && addon.size_prices[variation.id];
+    const byName = variation.name && addon.size_prices[variation.name];
+    const byDims = variation.width_cm && variation.length_cm &&
+      addon.size_prices[`${variation.width_cm}x${variation.length_cm}`];
+    const match = byId ?? byName ?? byDims;
+    if (match != null) return Number(match);
+  }
+  return Number(addon.final_price ?? addon.base_price ?? 0);
+}
+
+/**
+ * Filter addons that apply to the given product.
+ * Matches against `applicable_categories` (jsonb array) — falls back to
+ * showing all addons if no categories are declared.
+ */
+export function addonsForProduct(addons, product) {
+  if (!Array.isArray(addons) || !product) return [];
+  return addons.filter((addon) => {
+    const apc = addon.applicable_categories;
+    if (!apc) return true; // no restrictions -> show for all
+    const list = Array.isArray(apc) ? apc : (typeof apc === 'object' ? Object.keys(apc) : []);
+    if (list.length === 0) return true;
+    const productCategories = [
+      product.category,
+      product.category_raw,
+      product.bed_type_raw,
+      ...(Array.isArray(product.categories) ? product.categories : []),
+    ].filter(Boolean);
+    return list.some((c) => productCategories.includes(c));
+  });
+}
+
 function applyClientSideFilter(products, filter) {
   if (!filter) return products;
   return products.filter((row) => {
@@ -291,9 +363,28 @@ function stubEntity(name) {
   };
 }
 
+const addonEntity = {
+  async list() {
+    return loadAllAddons();
+  },
+  async filter(filter) {
+    const rows = await loadAllAddons();
+    return applyClientSideFilter(rows, filter);
+  },
+  async get(id) {
+    const rows = await loadAllAddons();
+    return rows.find((r) => r.id === id) || null;
+  },
+  async create() {
+    throw new Error('[base44Client shim] Addon.create is disabled on the website — use the CRM.');
+  },
+};
+
 const ENTITIES = {
   Product: productEntity,
   Order: orderEntity,
+  Addon: addonEntity,
+  ProductAddon: addonEntity, // legacy alias
   BlogPost: stubEntity('BlogPost'),
   ContactInquiry: stubEntity('ContactInquiry'),
 };

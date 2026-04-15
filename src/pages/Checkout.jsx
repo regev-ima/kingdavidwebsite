@@ -152,6 +152,8 @@ export default function Checkout() {
       quantity: item.quantity,
       with_storage: item.withStorage,
       unit_price: item.unitPrice,
+      addons: item.addons || [],
+      addons_unit_price: item.addonsUnitPrice || 0,
       line_total: item.lineTotal,
       image_url: item.imageUrl,
     }));

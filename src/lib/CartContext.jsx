@@ -61,10 +61,25 @@ export function CartProvider({ children }) {
     localStorage.setItem(ASSEMBLY_KEY, String(withAssembly));
   }, [withAssembly]);
 
-  const addItem = useCallback((product, size, quantity = 1, withStorage = false) => {
+  const addItem = useCallback((product, size, quantity = 1, withStorage = false, addons = []) => {
     const variation = resolveVariation(product, size);
     const unitPrice = priceFromVariation(variation, product);
     const variationId = variation?.id || null;
+    // Normalise addons: array of { id, name, price }
+    const normAddons = Array.isArray(addons)
+      ? addons.map((a) => ({
+          id: a.id,
+          name: a.name,
+          price: Number(a.price || 0),
+        }))
+      : [];
+    // Two cart rows match only if their addons are identical (ids + prices).
+    const sameAddons = (a, b) => {
+      if ((a?.length || 0) !== (b?.length || 0)) return false;
+      const aKey = [...(a || [])].map((x) => `${x.id}:${x.price}`).sort().join("|");
+      const bKey = [...(b || [])].map((x) => `${x.id}:${x.price}`).sort().join("|");
+      return aKey === bKey;
+    };
 
     setItems((prev) => {
       const idx = prev.findIndex(
@@ -72,14 +87,18 @@ export function CartProvider({ children }) {
           i.product.id === product.id &&
           i.size === size &&
           i.withStorage === withStorage &&
-          i.variationId === variationId
+          i.variationId === variationId &&
+          sameAddons(i.addons, normAddons)
       );
       if (idx >= 0) {
         const updated = [...prev];
         updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + quantity };
         return updated;
       }
-      return [...prev, { product, size, quantity, withStorage, variationId, unitPrice }];
+      return [...prev, {
+        product, size, quantity, withStorage, variationId, unitPrice,
+        addons: normAddons,
+      }];
     });
   }, []);
 
@@ -104,8 +123,18 @@ export function CartProvider({ children }) {
   const lineUnitPrice = (i) =>
     i.unitPrice ?? i.product?.sale_price ?? i.product?.price ?? 0;
 
+  // Sum of addon prices attached to a single cart row
+  const addonsUnitPrice = (i) =>
+    Array.isArray(i.addons)
+      ? i.addons.reduce((s, a) => s + Number(a.price || 0), 0)
+      : 0;
+
   const cartTotal = useMemo(
-    () => items.reduce((sum, i) => sum + lineUnitPrice(i) * i.quantity, 0),
+    () =>
+      items.reduce(
+        (sum, i) => sum + (lineUnitPrice(i) + addonsUnitPrice(i)) * i.quantity,
+        0
+      ),
     [items]
   );
 
@@ -119,18 +148,24 @@ export function CartProvider({ children }) {
   const orderTotal = cartTotal + shippingCost + assemblyCost;
 
   const getCheckoutPayload = useCallback(() => ({
-    items: items.map((i) => ({
-      productId: i.product.id,
-      variationId: i.variationId || null,
-      sku: i.product?.sku || null,
-      name: i.product.name,
-      size: i.size,
-      quantity: i.quantity,
-      withStorage: i.withStorage,
-      unitPrice: lineUnitPrice(i),
-      lineTotal: lineUnitPrice(i) * i.quantity,
-      imageUrl: i.product?.image_url || null,
-    })),
+    items: items.map((i) => {
+      const unit = lineUnitPrice(i);
+      const addonsUnit = addonsUnitPrice(i);
+      return {
+        productId: i.product.id,
+        variationId: i.variationId || null,
+        sku: i.product?.sku || null,
+        name: i.product.name,
+        size: i.size,
+        quantity: i.quantity,
+        withStorage: i.withStorage,
+        unitPrice: unit,
+        addons: Array.isArray(i.addons) ? i.addons : [],
+        addonsUnitPrice: addonsUnit,
+        lineTotal: (unit + addonsUnit) * i.quantity,
+        imageUrl: i.product?.image_url || null,
+      };
+    }),
     subtotal: cartTotal,
     shipping: shippingCost,
     assembly: assemblyCost,

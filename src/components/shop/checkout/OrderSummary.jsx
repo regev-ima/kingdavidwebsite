@@ -13,7 +13,16 @@ export default function OrderSummary({ collapsibleOnMobile = true }) {
   const itemsList = (
     <div className="space-y-3">
       {items.map((item, idx) => {
-        const price = item.product.sale_price || item.product.price;
+        const unit = Number(
+          item.unitPrice ??
+          item.product.sale_price ??
+          item.product.price ??
+          0
+        );
+        const addonsUnit = Array.isArray(item.addons)
+          ? item.addons.reduce((s, a) => s + Number(a.price || 0), 0)
+          : 0;
+        const lineTotal = (unit + addonsUnit) * item.quantity;
         return (
           <div key={idx} className="flex gap-3 items-start">
             <div className="w-14 h-14 rounded-lg overflow-hidden bg-white/[0.03] shrink-0">
@@ -27,12 +36,21 @@ export default function OrderSummary({ collapsibleOnMobile = true }) {
               <p className="text-sm font-medium text-foreground truncate">{item.product.name}</p>
               <p className="text-xs text-muted-foreground">
                 {item.size && `מידה: ${item.size}`}
-                {item.withStorage && " | ארגז מצעים"}
                 {item.quantity > 1 && ` | כמות: ${item.quantity}`}
               </p>
+              {Array.isArray(item.addons) && item.addons.length > 0 && (
+                <ul className="mt-1 space-y-0.5">
+                  {item.addons.map((a) => (
+                    <li key={a.id} className="text-[11px] text-foreground/55 flex items-center justify-between gap-2">
+                      <span>+ {a.name}</span>
+                      <span>₪{Number(a.price || 0).toLocaleString()}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <span className="text-sm font-bold text-foreground shrink-0">
-              ₪{(price * item.quantity).toLocaleString()}
+              ₪{lineTotal.toLocaleString()}
             </span>
           </div>
         );
