@@ -9,11 +9,32 @@ export default function ClubSection() {
       {/* Rich gold gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-[hsl(42,60%,25%)] via-[hsl(42,55%,30%)] to-[hsl(42,60%,25%)]" />
 
-      {/* Subtle plus/cross pattern overlay */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 8 H13 V11 H16 V13 H13 V16 H11 V13 H8 V11 H11 Z' fill='%23ffffff' fill-opacity='1'/%3E%3C/svg%3E")`,
-        backgroundSize: '24px 24px',
-      }} />
+      {/* Subtle plus/cross pattern overlay (masked so it fades in parts) */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 8 H13 V11 H16 V13 H13 V16 H11 V13 H8 V11 H11 Z' fill='%23ffffff' fill-opacity='1'/%3E%3C/svg%3E")`,
+          backgroundSize: '18px 18px',
+          WebkitMaskImage:
+            'radial-gradient(ellipse at 20% 85%, transparent 0%, rgba(0,0,0,0.4) 25%, #000 60%), radial-gradient(ellipse at 80% 15%, transparent 0%, rgba(0,0,0,0.5) 30%, #000 70%)',
+          maskImage:
+            'radial-gradient(ellipse at 20% 85%, transparent 0%, rgba(0,0,0,0.4) 25%, #000 60%), radial-gradient(ellipse at 80% 15%, transparent 0%, rgba(0,0,0,0.5) 30%, #000 70%)',
+          WebkitMaskComposite: 'source-over',
+          maskComposite: 'add',
+        }}
+      />
+
+      {/* Soft blurred glows to create depth */}
+      <div
+        aria-hidden
+        className="absolute -bottom-24 -left-24 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-30 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, hsl(42,70%,55%) 0%, transparent 70%)' }}
+      />
+      <div
+        aria-hidden
+        className="absolute -top-32 -right-24 w-[26rem] h-[26rem] rounded-full blur-3xl opacity-20 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, hsl(42,75%,60%) 0%, transparent 70%)' }}
+      />
 
       <div className="relative py-24 md:py-32">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
