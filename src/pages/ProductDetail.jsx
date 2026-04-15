@@ -1057,28 +1057,63 @@ export default function ProductDetail() {
         </div>
       </FadeInSection>
 
-      {/* ===== SECTION 11: FAQ CTA ===== */}
+      {/* ===== SECTION 11: Sleep Advisor CTA banner ===== */}
       <SectionDivider />
       <FadeInSection>
         <div className="py-16 md:py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="glass-card rounded-2xl p-8 md:p-10 text-center border border-primary/10">
-              <h3 className="text-2xl font-bold text-foreground mb-3">יש לכם שאלות?</h3>
-              <p className="text-foreground/60 mb-6 max-w-lg mx-auto">
-                מצאו תשובות לשאלות הנפוצות ביותר על מזרנים, משלוחים, אחריות ועוד
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Link to="/FAQ">
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 h-12 rounded-xl">
-                    לשאלות נפוצות
-                  </Button>
-                </Link>
-                <a href="tel:1700700464">
-                  <Button variant="outline" className="glass font-bold px-8 h-12 rounded-xl gap-2">
-                    <Phone className="w-4 h-4" />
-                    דברו איתנו: 1700-700-464
-                  </Button>
-                </a>
+            <div className="relative rounded-3xl overflow-hidden border border-primary/15 bg-gradient-to-l from-primary/[0.08] via-primary/[0.03] to-transparent">
+              <div className="grid grid-cols-1 md:grid-cols-2 items-stretch">
+                {/* Image side (LTR end in RTL layout = visually left) */}
+                <div className="relative min-h-[240px] md:min-h-[360px] order-last md:order-first">
+                  <img
+                    src="https://images.unsplash.com/photo-1616627561950-9f746e330187?w=1000&q=80"
+                    alt="שינה נינוחה"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  {/* Soft gradient so the right side blends into the content panel */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent md:bg-gradient-to-l md:from-background md:via-background/30 md:to-transparent" />
+                </div>
+
+                {/* Content side (visual right / RTL start) */}
+                <div className="p-8 md:p-12 flex flex-col justify-center gap-5">
+                  <p className="text-[11px] tracking-[0.35em] text-primary/80 uppercase font-light">
+                    ייעוץ שינה אישי
+                  </p>
+                  <h3 className="text-2xl md:text-[28px] font-bold text-foreground leading-snug">
+                    בואו נמצא יחד את פתרון השינה
+                    <br className="hidden md:block" />
+                    המושלם עבורכם
+                  </h3>
+                  <p className="text-sm text-foreground/60 leading-relaxed max-w-md">
+                    יועצי השינה שלנו כאן כדי לעזור לכם לבחור את המזרן המתאים,
+                    לענות על כל שאלה ולהתאים פתרון בדיוק לצרכים שלכם.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-3 mt-1">
+                    <a href="tel:1700700464" className="w-full sm:w-auto">
+                      <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 h-12 rounded-full gap-2 glow-gold">
+                        <Phone className="w-4 h-4" />
+                        להתייעצות עם נציג
+                      </Button>
+                    </a>
+                    <Link to="/FAQ" className="w-full sm:w-auto">
+                      <Button
+                        variant="outline"
+                        className="w-full sm:w-auto font-medium px-8 h-12 rounded-full border-primary/25 hover:border-primary/50 text-foreground/80 hover:text-foreground bg-transparent"
+                      >
+                        לשאלות נפוצות
+                      </Button>
+                    </Link>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs text-foreground/50 font-light pt-1">
+                    <Clock className="w-3.5 h-3.5 text-primary/60 shrink-0" />
+                    <span>
+                      שעות פעילות המוקד: א׳—ה׳ 09:00—20:00, ו׳ 09:00—13:00
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
