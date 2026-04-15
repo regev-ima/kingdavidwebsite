@@ -558,7 +558,7 @@ export default function ProductDetail() {
             <div className={`grid ${product.has_trial_period ? "grid-cols-3" : "grid-cols-2"} gap-3 mb-5`}>
               <div className="glass rounded-xl p-3 text-center">
                 <Shield className="w-5 h-5 text-primary mx-auto mb-1" />
-                <span className="text-xs text-foreground/70">אחריות {product.warranty_years ?? 10} שנה</span>
+                <span className="text-xs text-foreground/70">אחריות {product.warranty_years ?? 10} שנים</span>
               </div>
               <div className="glass rounded-xl p-3 text-center">
                 <Truck className="w-5 h-5 text-primary mx-auto mb-1" />
