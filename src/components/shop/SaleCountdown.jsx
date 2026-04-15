@@ -62,14 +62,13 @@ export default function SaleCountdown({ endsAt, variant = "full", onExpire }) {
   }
 
   // FULL — single clean line, spelled-out Hebrew, RTL
-  // "נותרו עוד 1 יום, 14 שעות, 40 דקות, 08 שניות"
+  // "המבצע מסתיים בעוד: 1 ימים · 14 שעות · 40 דקות · 08 שניות"
   const { days, hours, minutes, seconds } = c;
-  const plural = (n, s, p) => (n === 1 ? s : p);
   const tokens = [
-    { v: days,    s: "יום",  p: "ימים" },
-    { v: hours,   s: "שעה",  p: "שעות" },
-    { v: minutes, s: "דקה",  p: "דקות" },
-    { v: seconds, s: "שנייה", p: "שניות" },
+    { v: days,    label: "ימים" },
+    { v: hours,   label: "שעות" },
+    { v: minutes, label: "דקות" },
+    { v: seconds, label: "שניות" },
   ];
   // Drop leading zeros so we don't say "0 ימים"
   let trimmed = tokens;
@@ -88,10 +87,10 @@ export default function SaleCountdown({ endsAt, variant = "full", onExpire }) {
         </p>
         <p className="text-base md:text-lg text-destructive font-medium leading-tight flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
           {trimmed.map((t, i) => (
-            <span key={t.s} className="inline-flex items-baseline gap-1 whitespace-nowrap">
+            <span key={t.label} className="inline-flex items-baseline gap-1 whitespace-nowrap">
               <span className="font-semibold tabular-nums">{t.v}</span>
               <span className="text-sm md:text-base text-destructive/85">
-                {plural(t.v, t.s, t.p)}
+                {t.label}
               </span>
               {i < trimmed.length - 1 && (
                 <span className="text-destructive/35 mx-0.5">·</span>

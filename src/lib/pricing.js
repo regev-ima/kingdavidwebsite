@@ -101,19 +101,19 @@ export function countdownTo(endDate, now = new Date()) {
   const seconds = Math.floor((totalMs % (60 * 1000)) / 1000);
   const expired = totalMs <= 0;
 
-  const pluralize = (n, singular, plural) => (n === 1 ? singular : plural);
-
+  // Always plural form — site convention ("1 ימים" reads better
+  // in UI than switching to "1 יום" for a single value).
   let primaryLabel = null;
-  if (days > 0) primaryLabel = `${days} ${pluralize(days, "יום", "ימים")}`;
-  else if (hours > 0) primaryLabel = `${hours} ${pluralize(hours, "שעה", "שעות")}`;
-  else if (minutes > 0) primaryLabel = `${minutes} ${pluralize(minutes, "דקה", "דקות")}`;
-  else primaryLabel = `${seconds} ${pluralize(seconds, "שנייה", "שניות")}`;
+  if (days > 0) primaryLabel = `${days} ימים`;
+  else if (hours > 0) primaryLabel = `${hours} שעות`;
+  else if (minutes > 0) primaryLabel = `${minutes} דקות`;
+  else primaryLabel = `${seconds} שניות`;
 
   const parts = [
-    { value: days,    unit: "days",    label: pluralize(days,    "יום", "ימים") },
-    { value: hours,   unit: "hours",   label: pluralize(hours,   "שעה", "שעות") },
-    { value: minutes, unit: "minutes", label: pluralize(minutes, "דקה", "דקות") },
-    { value: seconds, unit: "seconds", label: pluralize(seconds, "שנייה", "שניות") },
+    { value: days,    unit: "days",    label: "ימים" },
+    { value: hours,   unit: "hours",   label: "שעות" },
+    { value: minutes, unit: "minutes", label: "דקות" },
+    { value: seconds, unit: "seconds", label: "שניות" },
   ];
 
   // Drop leading zero units so we don't show "0 ימים 2 שעות"
