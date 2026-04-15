@@ -63,7 +63,7 @@ export default function Blog() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-white/[0.03]">
-                          <span className="text-4xl font-playfair text-primary/20">KD</span>
+                          <span className="text-4xl font-sans-hebrew text-primary/20">KD</span>
                         </div>
                       )}
                     </div>

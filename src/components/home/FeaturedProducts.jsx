@@ -54,7 +54,7 @@ export default function FeaturedProducts() {
         {/* Header with ornament */}
         <div className="text-center mb-14">
           <SectionDivider className="mb-4" />
-          <h2 className="text-3xl md:text-4xl font-cormorant font-semibold text-foreground mb-3">המוצרים המומלצים</h2>
+          <h2 className="text-3xl md:text-4xl font-sans-hebrew font-semibold text-foreground mb-3">המוצרים המומלצים</h2>
           <p className="text-muted-foreground text-sm font-light tracking-wide">הדגמים הפופולריים ביותר שלנו</p>
         </div>
 
@@ -85,7 +85,7 @@ export default function FeaturedProducts() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-card">
-                        <span className="text-4xl font-cormorant text-primary/20">KD</span>
+                        <span className="text-4xl font-sans-hebrew text-primary/20">KD</span>
                       </div>
                     )}
                     {product.is_on_sale && (
@@ -94,7 +94,7 @@ export default function FeaturedProducts() {
                   </div>
                   <div className="p-5" dir="rtl">
                     <p className="text-xs text-muted-foreground mb-1 font-light">{product.category}</p>
-                    <h3 className="font-cormorant text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
+                    <h3 className="font-sans-hebrew text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
                       {product.name}
                     </h3>
                     <div className="flex items-center gap-2">

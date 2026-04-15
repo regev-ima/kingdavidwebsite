@@ -71,7 +71,7 @@ export default function CartDrawer({ open, onClose }) {
                           {item.product.image_url ? (
                             <img src={optimizeImage(item.product.image_url, { width: 160, quality: 70 })} alt={item.product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-primary/20 font-playfair text-lg">KD</div>
+                            <div className="w-full h-full flex items-center justify-center text-primary/20 font-sans-hebrew text-lg">KD</div>
                           )}
                         </div>
 

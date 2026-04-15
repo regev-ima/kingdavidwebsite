@@ -24,7 +24,7 @@ export default function About() {
           <motion.div {...fadeIn()}>
             <img src="/images/general/crown-logo.png" alt="" className="w-14 h-12 mx-auto mb-6 object-contain brightness-0 invert opacity-40" />
             <p className="text-sm tracking-[0.3em] uppercase text-white/50 mb-4">הסיפור שלנו</p>
-            <h1 className="text-4xl md:text-6xl font-bold text-white font-playfair mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-white font-sans-hebrew mb-6">
               ברוכים הבאים לממלכת
               <br />
               <span className="text-primary">קינג דיוויד</span>
@@ -66,7 +66,7 @@ export default function About() {
               <motion.div key={m.year} {...fadeIn(i * 0.1)} className={`relative flex items-start gap-6 mb-12 last:mb-0 ${i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"}`}>
                 <div className={`flex-1 ${i % 2 === 0 ? "md:text-left" : "md:text-right"}`}>
                   <div className="glass-card rounded-2xl p-6 md:p-8">
-                    <span className="text-3xl font-bold text-primary font-playfair">{m.year}</span>
+                    <span className="text-3xl font-bold text-primary font-sans-hebrew">{m.year}</span>
                     <h3 className="text-xl font-bold text-foreground mt-2 mb-2">{m.title}</h3>
                     <p className="text-foreground/60 leading-relaxed">{m.text}</p>
                   </div>
@@ -167,7 +167,7 @@ export default function About() {
               { number: "20", label: "שנות אחריות" },
             ].map((stat, i) => (
               <motion.div key={i} {...fadeIn(i * 0.08)} className="text-center">
-                <span className="text-4xl md:text-5xl font-bold text-primary font-playfair">{stat.number}</span>
+                <span className="text-4xl md:text-5xl font-bold text-primary font-sans-hebrew">{stat.number}</span>
                 <p className="text-sm text-foreground/50 mt-2">{stat.label}</p>
               </motion.div>
             ))}
@@ -206,7 +206,7 @@ export default function About() {
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <motion.div {...fadeIn()}>
             <img src="/images/general/crown-logo.png" alt="" className="w-10 h-8 mx-auto mb-8 object-contain brightness-0 invert opacity-30" />
-            <blockquote className="text-2xl md:text-3xl font-bold text-white leading-relaxed mb-8 font-playfair">
+            <blockquote className="text-2xl md:text-3xl font-bold text-white leading-relaxed mb-8 font-sans-hebrew">
               "כאלו אנחנו — מגשימים חלומות."
             </blockquote>
             <p className="text-white/50 text-sm tracking-wide">— שוקי רחמני, מייסד קינג דיוויד</p>

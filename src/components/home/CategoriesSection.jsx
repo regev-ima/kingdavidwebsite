@@ -37,7 +37,7 @@ export default function CategoriesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-14">
           <SectionDivider className="mb-4" />
-          <h2 className="text-3xl md:text-4xl font-cormorant font-semibold text-foreground mb-3">
+          <h2 className="text-3xl md:text-4xl font-sans-hebrew font-semibold text-foreground mb-3">
             הקטגוריות שלנו
           </h2>
           <p className="text-muted-foreground text-sm font-light">
@@ -63,7 +63,7 @@ export default function CategoriesSection() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[hsl(225,20%,4%)]/80 via-[hsl(225,20%,4%)]/30 to-transparent" />
                   <div className="absolute bottom-0 right-0 left-0 p-6">
-                    <h3 className="text-xl font-cormorant font-semibold text-white mb-1">{cat.title}</h3>
+                    <h3 className="text-xl font-sans-hebrew font-semibold text-white mb-1">{cat.title}</h3>
                     <p className="text-white/50 text-xs font-light mb-3">{cat.description}</p>
                     {/* Gold underline that reveals on hover */}
                     <div className="w-0 group-hover:w-12 h-px bg-primary transition-all duration-300 mb-3" />

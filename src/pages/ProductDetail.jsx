@@ -282,7 +282,7 @@ export default function ProductDetail() {
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-8xl font-cormorant text-primary/20">KD</span>
+                  <span className="text-8xl font-sans-hebrew text-primary/20">KD</span>
                 </div>
               )}
 
@@ -995,7 +995,7 @@ export default function ProductDetail() {
             <div
               className="font-bold leading-none mb-6 select-none"
               style={{
-                fontFamily: "var(--font-playfair)",
+                fontFamily: "var(--font-sans-hebrew)",
                 fontSize: "clamp(8rem, 20vw, 16rem)",
                 color: "transparent",
                 backgroundImage: "linear-gradient(180deg, #e8c84a 0%, #b8972a 40%, #8a6e1a 80%, #b8972a 100%)",

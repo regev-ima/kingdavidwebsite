@@ -93,7 +93,7 @@ export default function TestimonialsSection() {
             </div>
             <span className="text-xs text-muted-foreground font-light">ביקורות גוגל</span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-cormorant font-semibold text-foreground mb-3">
+          <h2 className="text-3xl md:text-4xl font-sans-hebrew font-semibold text-foreground mb-3">
             מה הלקוחות שלנו אומרים
           </h2>
           <p className="text-muted-foreground text-sm font-light">אלפי לקוחות מרוצים ברחבי הארץ</p>
@@ -129,7 +129,7 @@ export default function TestimonialsSection() {
               >
                 <div className="royal-card rounded-lg p-6 mb-3 relative">
                   {/* Gold quotation mark */}
-                  <span className="absolute top-3 left-4 text-4xl font-cormorant text-primary/20 leading-none">&ldquo;</span>
+                  <span className="absolute top-3 left-4 text-4xl font-sans-hebrew text-primary/20 leading-none">&ldquo;</span>
 
                   <div className="flex gap-0.5 mb-3">
                     {Array(review.rating).fill(0).map((_, j) => (
@@ -140,11 +140,11 @@ export default function TestimonialsSection() {
                 </div>
 
                 <div className="flex items-center gap-2 px-2">
-                  <div className="w-9 h-9 rounded-full border border-primary/20 flex items-center justify-center text-primary font-cormorant font-semibold text-sm shrink-0">
+                  <div className="w-9 h-9 rounded-full border border-primary/20 flex items-center justify-center text-primary font-sans-hebrew font-semibold text-sm shrink-0">
                     {review.name.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-cormorant font-semibold text-foreground truncate">{review.name}</p>
+                    <p className="text-sm font-sans-hebrew font-semibold text-foreground truncate">{review.name}</p>
                     <p className="text-[11px] text-muted-foreground font-light">לפני חודשיים</p>
                   </div>
                   <GoogleIcon />

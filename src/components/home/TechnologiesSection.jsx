@@ -30,7 +30,7 @@ export default function TechnologiesSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-14">
           <SectionDivider className="mb-4" />
-          <h2 className="text-3xl md:text-4xl font-cormorant font-semibold text-foreground mb-3">
+          <h2 className="text-3xl md:text-4xl font-sans-hebrew font-semibold text-foreground mb-3">
             הטכנולוגיות שלנו
           </h2>
           <p className="text-muted-foreground text-sm font-light tracking-wide">
@@ -51,7 +51,7 @@ export default function TechnologiesSection() {
               <div className="w-20 h-20 rounded-full border border-primary/20 flex items-center justify-center mb-6 mx-auto group-hover:border-primary/40 group-hover:shadow-[0_0_20px_hsl(42_70%_55%/0.1)] transition-all duration-300">
                 <tech.icon className="w-10 h-10 text-primary" />
               </div>
-              <h3 className="text-xl font-cormorant font-semibold text-foreground mb-1">{tech.name}</h3>
+              <h3 className="text-xl font-sans-hebrew font-semibold text-foreground mb-1">{tech.name}</h3>
               <p className="text-xs text-primary/60 font-light tracking-wider mb-3 uppercase">{tech.subtitle}</p>
               <p className="text-muted-foreground text-sm leading-relaxed font-light">{tech.description}</p>
             </motion.div>

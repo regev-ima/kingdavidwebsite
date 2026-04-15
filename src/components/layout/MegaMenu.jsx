@@ -94,11 +94,11 @@ export default function MegaMenu({ open, category, onMouseEnter, onMouseLeave, o
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-card">
-                            <span className="text-3xl font-cormorant text-primary/15">KD</span>
+                            <span className="text-3xl font-sans-hebrew text-primary/15">KD</span>
                           </div>
                         )}
                       </div>
-                      <p className="mt-2.5 text-[13px] font-cormorant font-medium text-foreground/85 group-hover:text-primary transition-colors line-clamp-2">
+                      <p className="mt-2.5 text-[13px] font-sans-hebrew font-medium text-foreground/85 group-hover:text-primary transition-colors line-clamp-2">
                         {p.name}
                       </p>
                       {pricing.finalPrice > 0 && (

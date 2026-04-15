@@ -18,7 +18,7 @@ export default function Footer() {
             <div className="mb-4">
               <img src="/images/general/logo-full.png" alt="KING DAVID" className="h-16 w-auto object-contain brightness-0 invert opacity-80" />
             </div>
-            <p className="text-primary/70 text-sm font-cormorant italic mb-3">
+            <p className="text-primary/70 text-sm font-sans-hebrew italic mb-3">
               לישון כמו שלא ישנת אף פעם
             </p>
             <p className="text-foreground/40 text-xs leading-relaxed font-light">
@@ -28,7 +28,7 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-cormorant font-semibold text-lg mb-4 text-primary/80">ניווט מהיר</h3>
+            <h3 className="font-sans-hebrew font-semibold text-lg mb-4 text-primary/80">ניווט מהיר</h3>
             <div className="space-y-2">
               {[
                 { label: "מזרנים", path: "/Shop/מזרנים" },
@@ -51,7 +51,7 @@ export default function Footer() {
 
           {/* Branch Info */}
           <div>
-            <h3 className="font-cormorant font-semibold text-lg mb-4 text-primary/80">סניפים</h3>
+            <h3 className="font-sans-hebrew font-semibold text-lg mb-4 text-primary/80">סניפים</h3>
             <div className="space-y-4">
               <div>
                 <p className="font-medium text-sm text-foreground/70">אולם תצוגה ראשון לציון</p>
@@ -76,7 +76,7 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h3 className="font-cormorant font-semibold text-lg mb-4 text-primary/80">צור קשר</h3>
+            <h3 className="font-sans-hebrew font-semibold text-lg mb-4 text-primary/80">צור קשר</h3>
             <div className="space-y-3">
               <a href="tel:1700700464" className="flex items-center gap-2 text-foreground/40 hover:text-primary transition-colors text-sm font-light">
                 <Phone className="w-3.5 h-3.5" />
