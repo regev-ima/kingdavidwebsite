@@ -117,6 +117,13 @@ export default function ProductDetail() {
     }
   }, [product, selectedSize, availableSizes]);
 
+  // Pre-warm weserv + browser cache for every gallery image as soon as
+  // we know the URLs — the CRM uploads tend to be large PNGs, so the
+  // first on-demand optimisation is slow. Firing off background
+  // `new Image()` fetches here means clicking the next/prev arrow on
+  // the slider is instant instead of waiting for a full network round
+  // trip.
+
   const { data: apiAllProducts } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
@@ -195,6 +202,31 @@ export default function ProductDetail() {
 
     return out;
   }, [product]);
+
+  // Pre-warm weserv + browser cache for every gallery image as soon as
+  // we know the URLs. Large Supabase PNG uploads make the first-hit
+  // weserv optimisation noticeably slow — this eliminates the delay
+  // when the user flips through the slider.
+  useEffect(() => {
+    if (!images.length || typeof window === "undefined") return;
+    const preloaded = images.map((url) => {
+      const img = new window.Image();
+      img.decoding = "async";
+      img.loading = "eager";
+      // Match the main-view request so the browser reuses the same
+      // cached weserv response the <img> will ask for.
+      img.srcset = optimizeSrcSet(url, [600, 900, 1200], { quality: 78 }) || "";
+      img.src = optimizeImage(url, { width: 1000, quality: 78 });
+      return img;
+    });
+    return () => {
+      // Help GC drop the preloaders if the user navigates away fast.
+      preloaded.forEach((img) => {
+        img.src = "";
+        img.srcset = "";
+      });
+    };
+  }, [images]);
 
   // Resolve the variation the UI currently shows (by size) so that
   // computeEffectivePrice works against the right row. Falls back to the
@@ -307,6 +339,7 @@ export default function ProductDetail() {
                   sizes="(max-width: 1024px) 100vw, 600px"
                   alt={product.name}
                   loading="eager"
+                  fetchpriority="high"
                   decoding="async"
                   initial={{ opacity: 0, scale: 1.02 }}
                   animate={{ opacity: 1, scale: 1 }}
