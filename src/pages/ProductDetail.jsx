@@ -138,18 +138,6 @@ export default function ProductDetail() {
 
   const images = useMemo(() => {
     if (!product) return [];
-    // TEMP DEBUG — surface the raw product shape so we can see which
-    // field the CRM stores the gallery images under. Remove once the
-    // slider issue is resolved.
-    if (typeof window !== "undefined") {
-      // eslint-disable-next-line no-console
-      console.log("[ProductDetail] raw product object:", product);
-      // eslint-disable-next-line no-console
-      console.log(
-        "[ProductDetail] top-level keys:",
-        Object.keys(product || {}),
-      );
-    }
     const out = [];
     const pushIfNew = (value) => {
       // Accept plain strings…
