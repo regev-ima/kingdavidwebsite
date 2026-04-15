@@ -1,12 +1,14 @@
 // Lazy loader for the Google Maps JavaScript API (Places library).
-// Ensures the script is injected only once per page load and returns a
-// promise that resolves when `window.google.maps.places` is ready.
+// Uses a global callback to reliably resolve when both `google.maps`
+// and `google.maps.places` are populated — onload alone is unreliable
+// with the async bootstrap.
 //
 // Usage:
 //   const places = await loadGooglePlaces();
 //   new places.Autocomplete(inputEl, { ... });
 
 const SCRIPT_ID = 'google-maps-places-script';
+const CALLBACK_NAME = '__kdGoogleMapsReady';
 
 let loadPromise = null;
 
@@ -33,31 +35,22 @@ export function loadGooglePlaces() {
   }
 
   loadPromise = new Promise((resolve, reject) => {
-    const handleReady = async () => {
-      try {
-        // With loading=async, google.maps.places is NOT populated
-        // automatically on script load — you must explicitly import the
-        // library. This also works under the legacy loader so it's safe
-        // in both modes.
-        if (window.google?.maps?.importLibrary) {
-          const places = await window.google.maps.importLibrary('places');
-          resolve(places);
-          return;
-        }
-        if (window.google?.maps?.places) {
-          resolve(window.google.maps.places);
-          return;
-        }
+    // Callback fired by Google once the main API and the `places` library
+    // are fully initialized. Much more reliable than script.onload.
+    window[CALLBACK_NAME] = () => {
+      if (window.google?.maps?.places) {
+        resolve(window.google.maps.places);
+      } else {
         reject(new Error('Google Maps Places library unavailable after load'));
-      } catch (err) {
-        reject(err);
       }
     };
 
     const existing = document.getElementById(SCRIPT_ID);
     if (existing) {
-      existing.addEventListener('load', handleReady);
-      existing.addEventListener('error', () => reject(new Error('Google Maps script failed to load')));
+      // Another caller already injected the tag; wait for its callback.
+      existing.addEventListener('error', () =>
+        reject(new Error('Google Maps script failed to load')),
+      );
       return;
     }
 
@@ -67,8 +60,7 @@ export function loadGooglePlaces() {
     script.defer = true;
     script.src =
       `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}` +
-      `&libraries=places&language=iw&region=IL&loading=async&v=weekly`;
-    script.onload = handleReady;
+      `&libraries=places&language=iw&region=IL&callback=${CALLBACK_NAME}&v=weekly`;
     script.onerror = () => reject(new Error('Google Maps script failed to load'));
     document.head.appendChild(script);
   });
