@@ -105,7 +105,7 @@ export default function ProductCard({ product, index }) {
               </span>
             </div>
 
-            <h3 className="font-cormorant text-xl leading-tight font-semibold text-foreground group-hover:text-primary transition-colors">
+            <h3 className="font-sans-hebrew text-lg leading-tight font-semibold text-foreground group-hover:text-primary transition-colors">
               {product.name}
             </h3>
 
