@@ -8,7 +8,7 @@ import { countdownTo } from "@/lib/pricing";
  * variant:
  *   "compact" — small pill (used on ProductCard corner): biggest unit only
  *   "inline"  — single short line to sit next to a price
- *   "full"    — 4-box day/hour/minute/second banner (used on ProductDetail)
+ *   "full"    — wide banner (used on ProductDetail)
  */
 export default function SaleCountdown({ endsAt, variant = "full", onExpire }) {
   const [now, setNow] = useState(() => new Date());
@@ -37,9 +37,12 @@ export default function SaleCountdown({ endsAt, variant = "full", onExpire }) {
 
   if (variant === "compact") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 h-6 rounded-full
-                       bg-background/70 backdrop-blur-md border border-destructive/40
-                       text-destructive text-[11px] font-medium whitespace-nowrap">
+      <span
+        dir="rtl"
+        className="inline-flex items-center gap-1.5 px-2.5 h-6 rounded-full
+                   bg-background/70 backdrop-blur-md border border-destructive/40
+                   text-destructive text-[11px] font-medium whitespace-nowrap"
+      >
         <Clock className="w-3 h-3" />
         <span>נשארו {c.primaryLabel}</span>
       </span>
@@ -48,48 +51,54 @@ export default function SaleCountdown({ endsAt, variant = "full", onExpire }) {
 
   if (variant === "inline") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-destructive font-medium">
+      <span
+        dir="rtl"
+        className="inline-flex items-center gap-1.5 text-xs text-destructive font-medium"
+      >
         <Clock className="w-3.5 h-3.5" />
         המבצע מסתיים בעוד {c.primaryLabel}
       </span>
     );
   }
 
-  // FULL: 4 boxes (d / h / m / s)
+  // FULL — single clean line, spelled-out Hebrew, RTL
+  // "נותרו עוד 1 יום, 14 שעות, 40 דקות, 08 שניות"
   const { days, hours, minutes, seconds } = c;
-  const pad = (n) => String(n).padStart(2, "0");
-
-  const boxes = [
-    { value: pad(days),    label: "ימים" },
-    { value: pad(hours),   label: "שעות" },
-    { value: pad(minutes), label: "דקות" },
-    { value: pad(seconds), label: "שניות" },
+  const plural = (n, s, p) => (n === 1 ? s : p);
+  const tokens = [
+    { v: days,    s: "יום",  p: "ימים" },
+    { v: hours,   s: "שעה",  p: "שעות" },
+    { v: minutes, s: "דקה",  p: "דקות" },
+    { v: seconds, s: "שנייה", p: "שניות" },
   ];
+  // Drop leading zeros so we don't say "0 ימים"
+  let trimmed = tokens;
+  while (trimmed.length > 1 && trimmed[0].v === 0) trimmed = trimmed.slice(1);
 
   return (
-    <div className="flex items-stretch gap-2 rounded-xl border border-destructive/25
-                    bg-destructive/[0.06] p-3">
-      <div className="flex items-center gap-2 pl-2 border-l border-destructive/15">
-        <Clock className="w-4 h-4 text-destructive" />
-        <span className="text-xs text-foreground/70 font-light whitespace-nowrap">
+    <div
+      dir="rtl"
+      className="flex items-center gap-3 rounded-xl border border-destructive/25
+                 bg-destructive/[0.06] px-4 py-3"
+    >
+      <Clock className="w-5 h-5 text-destructive shrink-0" />
+      <div className="flex flex-col gap-0.5 min-w-0">
+        <p className="text-[11px] text-foreground/60 font-light tracking-wide">
           המבצע מסתיים בעוד
-        </span>
-      </div>
-      <div className="flex items-center gap-1.5 flex-1 justify-end">
-        {boxes.map((b) => (
-          <div
-            key={b.label}
-            className="flex flex-col items-center justify-center min-w-[44px] px-2 py-1
-                       rounded-lg bg-background/50 border border-destructive/20"
-          >
-            <span className="font-mono text-base font-semibold text-destructive leading-none tabular-nums">
-              {b.value}
+        </p>
+        <p className="text-base md:text-lg text-destructive font-medium leading-tight flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+          {trimmed.map((t, i) => (
+            <span key={t.s} className="inline-flex items-baseline gap-1 whitespace-nowrap">
+              <span className="font-semibold tabular-nums">{t.v}</span>
+              <span className="text-sm md:text-base text-destructive/85">
+                {plural(t.v, t.s, t.p)}
+              </span>
+              {i < trimmed.length - 1 && (
+                <span className="text-destructive/35 mx-0.5">·</span>
+              )}
             </span>
-            <span className="text-[9px] text-foreground/55 mt-0.5 tracking-wide">
-              {b.label}
-            </span>
-          </div>
-        ))}
+          ))}
+        </p>
       </div>
     </div>
   );
