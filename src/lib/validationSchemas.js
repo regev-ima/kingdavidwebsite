@@ -13,8 +13,13 @@ export const contactSchema = z.object({
 });
 
 export const shippingSchema = z.object({
-  city: z.string().min(2, "נא להזין עיר"),
-  street: z.string().min(2, "נא להזין רחוב ומספר"),
+  // city + street are populated by the Google Places autocomplete.
+  // place_id is required to guarantee the address was selected from the
+  // Google suggestion list (not free-typed).
+  city: z.string().min(2, "נא לבחור כתובת מאומתת"),
+  street: z.string().min(2, "נא לבחור כתובת מאומתת"),
+  place_id: z.string().min(1, "נא לבחור כתובת מתוך ההצעות של Google"),
+  formatted_address: z.string().optional(),
   apartment: z.string().optional(),
   notes: z.string().optional(),
 });

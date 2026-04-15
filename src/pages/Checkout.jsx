@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useCart } from "@/lib/CartContext";
 import { checkoutSchema } from "@/lib/validationSchemas";
 import OrderSummary from "@/components/shop/checkout/OrderSummary";
+import AddressAutocomplete from "@/components/shop/checkout/AddressAutocomplete";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
@@ -55,6 +56,9 @@ export default function Checkout() {
     register,
     handleSubmit,
     getValues,
+    setValue,
+    watch,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(checkoutSchema),
@@ -64,10 +68,36 @@ export default function Checkout() {
       email: "",
       city: "",
       street: "",
+      place_id: "",
+      formatted_address: "",
       apartment: "",
       notes: "",
     },
   });
+
+  // Derived state for the Google Places autocomplete. Watching these
+  // fields keeps the visible "selected address" chip in sync with
+  // react-hook-form values.
+  const placeId = watch("place_id");
+  const formattedAddress = watch("formatted_address");
+  const selectedPlace = placeId
+    ? { placeId, formattedAddress, city: watch("city"), street: watch("street") }
+    : null;
+
+  const handleAddressSelect = (parsed) => {
+    setValue("city", parsed.city, { shouldValidate: true });
+    setValue("street", parsed.street, { shouldValidate: true });
+    setValue("place_id", parsed.placeId, { shouldValidate: true });
+    setValue("formatted_address", parsed.formattedAddress, { shouldValidate: true });
+    clearErrors(["city", "street", "place_id"]);
+  };
+
+  const handleAddressClear = () => {
+    setValue("city", "", { shouldValidate: true });
+    setValue("street", "", { shouldValidate: true });
+    setValue("place_id", "", { shouldValidate: true });
+    setValue("formatted_address", "", { shouldValidate: true });
+  };
 
   if (items.length === 0 && !orderComplete) {
     return (
@@ -117,7 +147,7 @@ export default function Checkout() {
     msg += `*שם:* ${data.fullName}\n`;
     msg += `*טלפון:* ${data.phone}\n`;
     msg += `*אימייל:* ${data.email}\n`;
-    msg += `*כתובת:* ${data.street}, ${data.city}`;
+    msg += `*כתובת:* ${data.formatted_address || `${data.street}, ${data.city}`}`;
     if (data.apartment) msg += ` דירה ${data.apartment}`;
     msg += `\n`;
     if (data.notes) msg += `*הערות:* ${data.notes}\n`;
@@ -164,6 +194,8 @@ export default function Checkout() {
       assembly: payload.assembly,
       payment_method: paymentMethod,
       website_notes: data.notes || null,
+      google_place_id: data.place_id || null,
+      google_formatted_address: data.formatted_address || null,
     };
 
     const orderRow = {
@@ -283,23 +315,26 @@ export default function Checkout() {
               <h2 className="text-lg font-bold text-foreground">כתובת למשלוח</h2>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground/80">עיר *</label>
-                <Input
-                  {...register("city")}
-                  className="h-11"
-                  placeholder="עיר"
+                <label className="text-sm font-medium text-foreground/80">כתובת *</label>
+                <AddressAutocomplete
+                  value={selectedPlace}
+                  onSelect={handleAddressSelect}
+                  onClear={handleAddressClear}
+                  onManualFallback={(text) => {
+                    // Fallback for environments without a Google Maps API key —
+                    // accept the raw text so checkout still works. The CRM team
+                    // will see `place_id: "manual"` and review manually.
+                    setValue("formatted_address", text, { shouldValidate: true });
+                    setValue("street", text, { shouldValidate: true });
+                    setValue("place_id", "manual", { shouldValidate: true });
+                  }}
+                  error={errors.place_id?.message || errors.street?.message || errors.city?.message}
                 />
-                {errors.city && <p className="text-sm text-red-400">{errors.city.message}</p>}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground/80">רחוב ומספר *</label>
-                <Input
-                  {...register("street")}
-                  className="h-11"
-                  placeholder="רחוב ומספר בית"
-                />
-                {errors.street && <p className="text-sm text-red-400">{errors.street.message}</p>}
+                {/* Hidden fields so react-hook-form picks up Google-populated values */}
+                <input type="hidden" {...register("city")} />
+                <input type="hidden" {...register("street")} />
+                <input type="hidden" {...register("place_id")} />
+                <input type="hidden" {...register("formatted_address")} />
               </div>
 
               <div className="space-y-1.5">
