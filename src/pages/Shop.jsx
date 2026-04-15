@@ -108,7 +108,7 @@ export default function Shop() {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="text-4xl md:text-6xl font-cormorant font-semibold text-foreground mb-3"
+            className="text-4xl md:text-6xl font-sans-hebrew font-semibold text-foreground mb-3"
           >
             {activeCategory === "הכל" ? "כל המוצרים" : activeCategory}
           </motion.h1>
@@ -240,7 +240,7 @@ export default function Shop() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-24">
-            <div className="inline-block mb-4 text-5xl font-cormorant text-primary/30">∅</div>
+            <div className="inline-block mb-4 text-5xl font-sans-hebrew text-primary/30">∅</div>
             <p className="text-foreground/60 text-lg font-light">לא נמצאו מוצרים</p>
             {hasActiveFilters && (
               <button

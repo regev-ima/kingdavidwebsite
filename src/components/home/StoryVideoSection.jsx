@@ -51,7 +51,7 @@ export default function StoryVideoSection() {
             viewport={{ once: true }}
           >
             <p className="text-xs tracking-[0.3em] text-primary/60 uppercase mb-3 font-light">ברוכים הבאים לממלכת</p>
-            <h2 className="text-4xl md:text-5xl font-cormorant font-semibold text-foreground mb-4">
+            <h2 className="text-4xl md:text-5xl font-sans-hebrew font-semibold text-foreground mb-4">
               KING DAVID
             </h2>
             <p className="text-muted-foreground text-sm font-light mb-8">
@@ -67,7 +67,7 @@ export default function StoryVideoSection() {
               <p>
                 המפעל שלנו, הממוקם בקריית מלאכי, הוא קצת כמו סטודיו-אמן. אנו מייצרים את המזרונים, המיטות וספות הנוער שלנו בעבודת יד — תוך שימוש בחומרי גלם משובחים וטכנולוגיות חדשניות בלבד.
               </p>
-              <p className="text-foreground/80 font-cormorant text-lg italic">
+              <p className="text-foreground/80 font-sans-hebrew text-lg italic">
                 "כאלו אנחנו — מגשימים חלומות."
               </p>
             </div>

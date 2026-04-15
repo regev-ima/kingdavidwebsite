@@ -16,7 +16,7 @@ export default function CTASection() {
         >
           <div className="border border-primary/10 p-10 md:p-16 glass-highlight">
             <SectionDivider className="mb-6" />
-            <h2 className="text-3xl md:text-5xl font-cormorant font-semibold text-foreground mb-6">
+            <h2 className="text-3xl md:text-5xl font-sans-hebrew font-semibold text-foreground mb-6">
               מוכנים לשינה
               <span className="gold-shimmer"> הטובה ביותר?</span>
             </h2>
@@ -30,7 +30,7 @@ export default function CTASection() {
                   קבעו ייעוץ שינה חינם
                 </Button>
               </a>
-              <a href="tel:1700700464" className="flex items-center gap-2 text-primary font-cormorant text-xl font-semibold hover:text-primary/80 transition-colors">
+              <a href="tel:1700700464" className="flex items-center gap-2 text-primary font-sans-hebrew text-xl font-semibold hover:text-primary/80 transition-colors">
                 <Phone className="w-5 h-5" />
                 1700-700-464
               </a>

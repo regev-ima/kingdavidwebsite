@@ -31,7 +31,7 @@ export default function ClubSection() {
             <h2 className="text-sm tracking-[0.4em] uppercase text-white/50 font-light mb-3">
               הצטרפו למועדון
             </h2>
-            <h3 className="text-4xl md:text-5xl font-cormorant font-semibold text-white mb-8">
+            <h3 className="text-4xl md:text-5xl font-sans-hebrew font-semibold text-white mb-8">
               KING DAVID CLUB
             </h3>
 

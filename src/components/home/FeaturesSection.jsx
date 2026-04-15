@@ -47,7 +47,7 @@ export default function FeaturesSection() {
 
           <div className="text-center mb-14">
             <SectionDivider className="mb-4" />
-            <h2 className="text-3xl md:text-5xl font-cormorant font-semibold text-foreground mb-3">
+            <h2 className="text-3xl md:text-5xl font-sans-hebrew font-semibold text-foreground mb-3">
               למה לבחור בקינג דיוויד?
             </h2>
             <p className="text-muted-foreground text-sm font-light">
@@ -70,11 +70,11 @@ export default function FeaturesSection() {
                 </div>
 
                 <div className="mb-3">
-                  <span className="text-4xl md:text-5xl font-cormorant-sc font-semibold text-primary leading-none">{feature.number}</span>
+                  <span className="text-4xl md:text-5xl font-sans-hebrew font-semibold text-primary leading-none">{feature.number}</span>
                   <span className="text-xs text-primary/60 font-light mr-1">{feature.unit}</span>
                 </div>
 
-                <h3 className="text-base font-cormorant font-semibold text-foreground mb-2">{feature.title}</h3>
+                <h3 className="text-base font-sans-hebrew font-semibold text-foreground mb-2">{feature.title}</h3>
                 <p className="text-muted-foreground text-xs leading-relaxed font-light">{feature.description}</p>
               </motion.div>
             ))}

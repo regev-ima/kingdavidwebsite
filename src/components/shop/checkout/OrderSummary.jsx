@@ -30,7 +30,7 @@ export default function OrderSummary({ collapsibleOnMobile = true }) {
               {item.product.image_url ? (
                 <img src={optimizeImage(item.product.image_url, { width: 120, quality: 70 })} alt={item.product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-primary/20 font-playfair text-sm">KD</div>
+                <div className="w-full h-full flex items-center justify-center text-primary/20 font-sans-hebrew text-sm">KD</div>
               )}
             </div>
             <div className="flex-1 min-w-0">

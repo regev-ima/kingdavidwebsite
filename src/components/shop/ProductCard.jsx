@@ -50,7 +50,7 @@ export default function ProductCard({ product, index }) {
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[hsl(225_15%_10%)] to-[hsl(225_20%_4%)]">
-                <span className="text-7xl font-cormorant text-primary/15 select-none">KD</span>
+                <span className="text-7xl font-sans-hebrew text-primary/15 select-none">KD</span>
               </div>
             )}
 
@@ -133,7 +133,7 @@ export default function ProductCard({ product, index }) {
               <div className="flex items-baseline gap-2 flex-wrap">
                 {pricing.isOnSaleNow ? (
                   <>
-                    <span className="text-2xl font-cormorant font-semibold text-primary leading-none">
+                    <span className="text-2xl font-sans-hebrew font-semibold text-primary leading-none">
                       ₪{pricing.finalPrice.toLocaleString()}
                     </span>
                     <span className="text-sm text-muted-foreground line-through">
@@ -141,7 +141,7 @@ export default function ProductCard({ product, index }) {
                     </span>
                   </>
                 ) : pricing.finalPrice > 0 ? (
-                  <span className="text-2xl font-cormorant font-semibold text-primary leading-none">
+                  <span className="text-2xl font-sans-hebrew font-semibold text-primary leading-none">
                     ₪{pricing.finalPrice.toLocaleString()}
                   </span>
                 ) : (

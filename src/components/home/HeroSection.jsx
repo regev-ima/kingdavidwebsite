@@ -73,7 +73,7 @@ export default function HeroSection() {
           </motion.div>
 
           {/* Headline — word-by-word reveal */}
-          <h1 className="text-5xl md:text-7xl lg:text-[5.25rem] font-cormorant font-semibold text-foreground leading-[1.05] mb-6">
+          <h1 className="text-5xl md:text-7xl lg:text-[5.25rem] font-sans-hebrew font-semibold text-foreground leading-[1.05] mb-6">
             <RevealLine delay={0.1}>גלו את המזרן</RevealLine>
             <br />
             <RevealLine delay={0.3} className="gold-shimmer">
@@ -132,7 +132,7 @@ export default function HeroSection() {
                 key={label}
                 className="relative flex items-center gap-3 px-5 py-3 border border-primary/20 bg-background/40 backdrop-blur-md transition-all hover:border-primary/45 hover:-translate-y-0.5"
               >
-                <span className="text-3xl md:text-4xl font-cormorant-sc font-semibold text-primary leading-none">
+                <span className="text-3xl md:text-4xl font-sans-hebrew font-semibold text-primary leading-none">
                   {number}
                 </span>
                 <span className="text-[11px] md:text-xs text-foreground/60 font-light tracking-wide">
