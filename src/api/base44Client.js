@@ -406,14 +406,44 @@ const clubSignupEntity = {
   },
 };
 
+const leadEntity = {
+  async list() {
+    return [];
+  },
+  async filter() {
+    return [];
+  },
+  async get() {
+    return null;
+  },
+  async create(payload) {
+    if (!isSupabaseConfigured) {
+      console.warn('[base44Client shim] Lead.create called but Supabase is not configured.');
+      return null;
+    }
+    const { data, error } = await supabase.rpc('website_create_lead', {
+      lead_data: payload,
+    });
+    if (error) {
+      console.error('[base44Client shim] website_create_lead failed:', error.message);
+      throw error;
+    }
+    return { id: data };
+  },
+};
+
 const ENTITIES = {
   Product: productEntity,
   Order: orderEntity,
   Addon: addonEntity,
   ProductAddon: addonEntity, // legacy alias
   ClubSignup: clubSignupEntity,
+  Lead: leadEntity,
+  // Legacy alias — the old Contact page used ContactInquiry.create.
+  // Route it through the same lead RPC so every "contact us" form
+  // lands as a tagged lead in the CRM.
+  ContactInquiry: leadEntity,
   BlogPost: stubEntity('BlogPost'),
-  ContactInquiry: stubEntity('ContactInquiry'),
 };
 
 const entities = new Proxy(
