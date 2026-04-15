@@ -25,13 +25,15 @@ export default function ProductCard({ product, index }) {
       viewport={{ once: true, margin: "-10% 0px" }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="group relative"
+      className="group relative h-full"
     >
-      <Link to={`/ProductDetail?id=${product.id}`} className="block">
-        {/* Outer frame with gold accent animation */}
-        <div className="relative rounded-2xl overflow-hidden transition-all duration-500 royal-card group-hover:shadow-[0_20px_60px_-15px_hsl(42_70%_55%_/_0.25)] group-hover:-translate-y-0.5">
-          {/* Image */}
-          <div className="relative aspect-[4/5] overflow-hidden">
+      <Link to={`/ProductDetail?id=${product.id}`} className="block h-full">
+        {/* Outer frame with gold accent animation. flex column so the
+            price row always sticks to the bottom even when sibling
+            cards carry more optional content (e.g. countdown pill). */}
+        <div className="relative flex flex-col h-full rounded-2xl overflow-hidden transition-all duration-500 royal-card group-hover:shadow-[0_20px_60px_-15px_hsl(42_70%_55%_/_0.25)] group-hover:-translate-y-0.5">
+          {/* Image — fixed 4:5 ratio, never stretches */}
+          <div className="relative aspect-[4/5] overflow-hidden shrink-0">
             {product.image_url ? (
               <motion.img
                 src={product.image_url}
@@ -86,8 +88,9 @@ export default function ProductCard({ product, index }) {
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] w-0 group-hover:w-full bg-gradient-to-r from-transparent via-primary to-transparent transition-all duration-700 ease-out" />
           </div>
 
-          {/* Body */}
-          <div className="relative p-5 space-y-3">
+          {/* Body — flex-1 so cards in a row equalise to the tallest one,
+              with the price row pinned at the bottom via mt-auto. */}
+          <div className="relative p-5 flex flex-col gap-3 flex-1">
             <div className="flex items-center justify-between">
               <p className="text-[11px] tracking-[0.22em] text-muted-foreground uppercase font-light">
                 {product.category}
@@ -141,8 +144,8 @@ export default function ProductCard({ product, index }) {
               </div>
             )}
 
-            {/* Price row */}
-            <div className="flex items-end justify-between pt-1">
+            {/* Price row — mt-auto keeps it at the bottom of every card */}
+            <div className="mt-auto flex items-end justify-between pt-1">
               <div className="flex items-baseline gap-2 flex-wrap">
                 {pricing.isOnSaleNow ? (
                   <>
