@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Crown, Gift, Sparkles, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ClubSignupDialog from "@/components/home/ClubSignupDialog";
 
 export default function ClubSection() {
+  const [signupOpen, setSignupOpen] = useState(false);
+
   return (
     <section className="relative overflow-hidden">
       {/* Rich gold gradient */}
@@ -75,12 +78,17 @@ export default function ClubSection() {
               </span>
             </div>
 
-            <Button className="bg-transparent border border-white/25 text-white hover:bg-white/10 font-light text-base px-10 h-13 rounded-none tracking-wide transition-all">
+            <Button
+              onClick={() => setSignupOpen(true)}
+              className="bg-transparent border border-white/25 text-white hover:bg-white/10 font-light text-base px-10 h-13 rounded-none tracking-wide transition-all"
+            >
               לפרטים והצטרפות
             </Button>
           </motion.div>
         </div>
       </div>
+
+      <ClubSignupDialog open={signupOpen} onOpenChange={setSignupOpen} />
     </section>
   );
 }
