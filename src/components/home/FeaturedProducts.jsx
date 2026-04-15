@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -10,10 +10,6 @@ import { fallbackProducts } from "@/data/fallbackProducts";
 import { SectionDivider } from "@/components/ui/royal-ornament";
 
 export default function FeaturedProducts() {
-  const trackRef = useRef(null);
-  const animRef = useRef(null);
-  const posRef = useRef(0);
-
   const { data: apiProducts, isLoading } = useQuery({
     queryKey: ["featured-products"],
     queryFn: async () => {
@@ -27,25 +23,6 @@ export default function FeaturedProducts() {
   });
 
   const products = (apiProducts?.length > 0 ? apiProducts : fallbackProducts.filter(p => p.is_featured)).slice(0, 7);
-
-  useEffect(() => {
-    if (!trackRef.current || products.length === 0) return;
-
-    const speed = 0.4;
-
-    const animate = () => {
-      const track = trackRef.current;
-      if (!track) return;
-      const totalWidth = track.scrollWidth / 2;
-      posRef.current += speed;
-      if (posRef.current >= totalWidth) posRef.current = 0;
-      track.style.transform = `translateX(${posRef.current}px)`;
-      animRef.current = requestAnimationFrame(animate);
-    };
-
-    animRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [products]);
 
   if (isLoading) {
     return (
@@ -82,29 +59,14 @@ export default function FeaturedProducts() {
         </div>
 
         {/* Carousel with fade edges */}
-        <div className="relative overflow-hidden" dir="ltr">
+        <div className="relative overflow-hidden group" dir="ltr">
           {/* Fade edges */}
           <div className="absolute top-0 bottom-0 right-0 w-20 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
           <div className="absolute top-0 bottom-0 left-0 w-20 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
 
           <div
-            ref={trackRef}
-            className="flex gap-6"
+            className="flex gap-6 animate-marquee group-hover:[animation-play-state:paused]"
             style={{ width: "max-content" }}
-            onMouseEnter={() => cancelAnimationFrame(animRef.current)}
-            onMouseLeave={() => {
-              const speed = 0.4;
-              const animate = () => {
-                const track = trackRef.current;
-                if (!track) return;
-                const totalWidth = track.scrollWidth / 2;
-                posRef.current += speed;
-                if (posRef.current >= totalWidth) posRef.current = 0;
-                track.style.transform = `translateX(${posRef.current}px)`;
-                animRef.current = requestAnimationFrame(animate);
-              };
-              animRef.current = requestAnimationFrame(animate);
-            }}
           >
             {doubled.map((product, i) => (
               <Link

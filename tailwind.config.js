@@ -108,6 +108,10 @@ module.exports = {
           '0%': { backgroundPosition: '-200% center' },
           '100%': { backgroundPosition: '200% center' },
         },
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
@@ -119,6 +123,7 @@ module.exports = {
         'pulse-glow': 'pulse-glow 4s ease-in-out infinite',
         'fade-up': 'fade-up 0.6s ease-out forwards',
         'gold-shimmer': 'gold-shimmer 8s ease-in-out infinite',
+        marquee: 'marquee 60s linear infinite',
   		}
   	}
   },
