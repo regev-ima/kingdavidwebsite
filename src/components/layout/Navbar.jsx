@@ -83,8 +83,8 @@ export default function Navbar() {
         {/* Main Nav */}
         <div className={`relative transition-all duration-300 ${
           scrolled
-            ? "bg-[hsl(225,20%,4%)]/95 backdrop-blur-lg shadow-lg"
-            : "bg-[hsl(225,20%,4%)]/60 backdrop-blur-md"
+            ? "bg-background/95 backdrop-blur-lg shadow-lg"
+            : "bg-background/90 backdrop-blur-md"
         }`}>
           {/* Gold line under nav */}
           <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
@@ -216,7 +216,7 @@ export default function Navbar() {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="lg:hidden bg-[hsl(225,20%,4%)]/95 backdrop-blur-xl border-b border-primary/10 overflow-hidden"
+              className="lg:hidden bg-background/95 backdrop-blur-xl border-b border-primary/10 overflow-hidden"
             >
               <div className="px-4 py-3 space-y-0.5">
                 {navLinks.map((link) => (
