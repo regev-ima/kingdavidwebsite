@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Tag } from "lucide-react";
 import { useCart } from "@/lib/CartContext";
 
 export default function OrderSummary({ collapsibleOnMobile = true }) {
   const {
-    items, cartTotal, withAssembly, setAssembly,
+    items, cartTotal, cartSavings, withAssembly, setAssembly,
     shippingCost, assemblyCost, orderTotal,
   } = useCart();
 
@@ -64,6 +64,15 @@ export default function OrderSummary({ collapsibleOnMobile = true }) {
         <span>סכום ביניים</span>
         <span>₪{cartTotal.toLocaleString()}</span>
       </div>
+      {cartSavings > 0 && (
+        <div className="flex items-center justify-between text-sm rounded-lg px-3 py-2 bg-primary/[0.08] border border-primary/25 text-primary">
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            <Tag className="w-3.5 h-3.5" />
+            בקנייה זו חסכת
+          </span>
+          <span className="font-semibold">₪{cartSavings.toLocaleString()}</span>
+        </div>
+      )}
       <div className="flex justify-between text-sm text-foreground/80">
         <span>משלוח</span>
         <span>₪{shippingCost}</span>

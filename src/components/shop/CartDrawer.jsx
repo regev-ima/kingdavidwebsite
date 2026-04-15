@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
+import { X, Plus, Minus, Trash2, ShoppingBag, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/CartContext";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function CartDrawer({ open, onClose }) {
   const {
     items, removeItem, updateQuantity, clearCart,
-    cartTotal, cartCount,
+    cartTotal, cartCount, cartSavings,
     withAssembly, setAssembly,
     shippingCost, assemblyCost, orderTotal,
   } = useCart();
@@ -124,6 +124,15 @@ export default function CartDrawer({ open, onClose }) {
                   <span>סכום ביניים</span>
                   <span>₪{cartTotal.toLocaleString()}</span>
                 </div>
+                {cartSavings > 0 && (
+                  <div className="flex items-center justify-between text-sm rounded-lg px-3 py-2 bg-primary/[0.08] border border-primary/25 text-primary">
+                    <span className="inline-flex items-center gap-1.5 font-medium">
+                      <Tag className="w-3.5 h-3.5" />
+                      בקנייה זו חסכת
+                    </span>
+                    <span className="font-semibold">₪{cartSavings.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm text-foreground/80">
                   <span>משלוח</span>
                   <span>₪{shippingCost}</span>

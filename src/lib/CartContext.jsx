@@ -49,6 +49,15 @@ function priceFromVariation(variation, fallbackProduct) {
   return Number(fallbackProduct?.sale_price ?? fallbackProduct?.price ?? 0);
 }
 
+// The undiscounted price of the variation (what the customer "would pay
+// normally"). Used to compute how much they saved on this line.
+function originalPriceFromVariation(variation, fallbackProduct) {
+  if (variation) {
+    return Number(variation.base_price ?? variation.final_price ?? 0);
+  }
+  return Number(fallbackProduct?.price ?? fallbackProduct?.sale_price ?? 0);
+}
+
 export function CartProvider({ children }) {
   const [items, setItems] = useState(loadCart);
   const [withAssembly, setWithAssembly] = useState(loadAssembly);
@@ -64,6 +73,7 @@ export function CartProvider({ children }) {
   const addItem = useCallback((product, size, quantity = 1, withStorage = false, addons = []) => {
     const variation = resolveVariation(product, size);
     const unitPrice = priceFromVariation(variation, product);
+    const originalUnitPrice = originalPriceFromVariation(variation, product);
     const variationId = variation?.id || null;
     // Normalise addons: array of { id, name, price }
     const normAddons = Array.isArray(addons)
@@ -96,7 +106,9 @@ export function CartProvider({ children }) {
         return updated;
       }
       return [...prev, {
-        product, size, quantity, withStorage, variationId, unitPrice,
+        product, size, quantity, withStorage, variationId,
+        unitPrice,
+        originalUnitPrice,
         addons: normAddons,
       }];
     });
@@ -123,6 +135,9 @@ export function CartProvider({ children }) {
   const lineUnitPrice = (i) =>
     i.unitPrice ?? i.product?.sale_price ?? i.product?.price ?? 0;
 
+  const lineOriginalUnitPrice = (i) =>
+    i.originalUnitPrice ?? i.product?.price ?? lineUnitPrice(i);
+
   // Sum of addon prices attached to a single cart row
   const addonsUnitPrice = (i) =>
     Array.isArray(i.addons)
@@ -135,6 +150,17 @@ export function CartProvider({ children }) {
         (sum, i) => sum + (lineUnitPrice(i) + addonsUnitPrice(i)) * i.quantity,
         0
       ),
+    [items]
+  );
+
+  // Sum of discounts across all lines (originalUnitPrice - unitPrice) * qty.
+  // Never negative.
+  const cartSavings = useMemo(
+    () =>
+      items.reduce((sum, i) => {
+        const delta = Math.max(0, lineOriginalUnitPrice(i) - lineUnitPrice(i));
+        return sum + delta * i.quantity;
+      }, 0),
     [items]
   );
 
@@ -160,6 +186,7 @@ export function CartProvider({ children }) {
         quantity: i.quantity,
         withStorage: i.withStorage,
         unitPrice: unit,
+        originalUnitPrice: lineOriginalUnitPrice(i),
         addons: Array.isArray(i.addons) ? i.addons : [],
         addonsUnitPrice: addonsUnit,
         lineTotal: (unit + addonsUnit) * i.quantity,
@@ -167,16 +194,17 @@ export function CartProvider({ children }) {
       };
     }),
     subtotal: cartTotal,
+    savings: cartSavings,
     shipping: shippingCost,
     assembly: assemblyCost,
     withAssembly,
     total: orderTotal,
-  }), [items, cartTotal, shippingCost, assemblyCost, withAssembly, orderTotal]);
+  }), [items, cartTotal, cartSavings, shippingCost, assemblyCost, withAssembly, orderTotal]);
 
   return (
     <CartContext.Provider value={{
       items, addItem, removeItem, updateQuantity, clearCart,
-      cartTotal, cartCount,
+      cartTotal, cartCount, cartSavings,
       withAssembly, setAssembly,
       shippingCost, assemblyCost, orderTotal,
       getCheckoutPayload,
