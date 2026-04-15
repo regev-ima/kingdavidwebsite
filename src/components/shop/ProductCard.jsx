@@ -39,12 +39,12 @@ export default function ProductCard({ product, index, layout = "grid" }) {
             isRow ? "flex-row" : "flex-col"
           } h-full rounded-2xl overflow-hidden transition-all duration-500 royal-card group-hover:shadow-[0_20px_60px_-15px_hsl(42_70%_55%_/_0.25)] group-hover:-translate-y-0.5`}
         >
-          {/* Image — grid: 4:5 ratio. row: fixed width, full height */}
+          {/* Image — grid: taller on desktop, shorter on mobile for 2-col grid. row: fixed width, full height */}
           <div
             className={`relative overflow-hidden shrink-0 ${
               isRow
                 ? "w-24 sm:w-32 aspect-square"
-                : "aspect-[4/5]"
+                : "aspect-square sm:aspect-[4/5]"
             }`}
           >
             {product.image_url ? (
@@ -106,17 +106,17 @@ export default function ProductCard({ product, index, layout = "grid" }) {
 
           {/* Body — flex-1 so cards in a row equalise to the tallest one,
               with the price row pinned at the bottom via mt-auto. */}
-          <div className={`relative flex flex-col flex-1 ${isRow ? "p-3 gap-1.5" : "p-5 gap-3"}`}>
+          <div className={`relative flex flex-col flex-1 ${isRow ? "p-3 gap-1.5" : "p-3 gap-2 sm:p-5 sm:gap-3"}`}>
             <div className="flex items-center justify-between">
-              <p className={`tracking-[0.22em] text-muted-foreground uppercase font-light ${isRow ? "text-[9px]" : "text-[11px]"}`}>
+              <p className={`text-muted-foreground uppercase font-light ${isRow ? "text-[9px] tracking-[0.15em]" : "text-[9px] tracking-[0.1em] sm:text-[11px] sm:tracking-[0.22em]"}`}>
                 {product.category}
               </p>
-              <span className={`text-primary/70 font-light ${isRow ? "text-[9px]" : "text-[10px]"}`}>
+              <span className={`text-primary/70 font-light ${isRow ? "text-[9px]" : "text-[8px] sm:text-[10px]"}`}>
                 {product.warranty_years ?? 10} שנות אחריות
               </span>
             </div>
 
-            <h3 className={`font-sans-hebrew leading-tight font-semibold text-foreground group-hover:text-primary transition-colors ${isRow ? "text-sm" : "text-lg"}`}>
+            <h3 className={`font-sans-hebrew leading-tight font-semibold text-foreground group-hover:text-primary transition-colors ${isRow ? "text-sm" : "text-sm sm:text-lg"}`}>
               {product.name}
             </h3>
 
@@ -154,19 +154,19 @@ export default function ProductCard({ product, index, layout = "grid" }) {
               <div className="flex items-baseline gap-2 flex-wrap">
                 {pricing.isOnSaleNow ? (
                   <>
-                    <span className={`font-sans-hebrew font-semibold text-primary leading-none ${isRow ? "text-base" : "text-2xl"}`}>
+                    <span className={`font-sans-hebrew font-semibold text-primary leading-none ${isRow ? "text-base" : "text-base sm:text-2xl"}`}>
                       ₪{pricing.finalPrice.toLocaleString()}
                     </span>
-                    <span className={`text-muted-foreground line-through ${isRow ? "text-xs" : "text-sm"}`}>
+                    <span className={`text-muted-foreground line-through ${isRow ? "text-xs" : "text-[11px] sm:text-sm"}`}>
                       ₪{pricing.originalPrice.toLocaleString()}
                     </span>
                   </>
                 ) : pricing.finalPrice > 0 ? (
-                  <span className={`font-sans-hebrew font-semibold text-primary leading-none ${isRow ? "text-base" : "text-2xl"}`}>
+                  <span className={`font-sans-hebrew font-semibold text-primary leading-none ${isRow ? "text-base" : "text-base sm:text-2xl"}`}>
                     ₪{pricing.finalPrice.toLocaleString()}
                   </span>
                 ) : (
-                  <span className={`text-muted-foreground ${isRow ? "text-xs" : "text-sm"}`}>צור קשר לתמחור</span>
+                  <span className={`text-muted-foreground ${isRow ? "text-xs" : "text-[11px] sm:text-sm"}`}>צור קשר לתמחור</span>
                 )}
               </div>
 
@@ -177,10 +177,10 @@ export default function ProductCard({ product, index, layout = "grid" }) {
                   opacity: hovered ? 1 : 0.5,
                 }}
                 transition={{ duration: 0.3 }}
-                className={`inline-flex items-center gap-1.5 tracking-widest text-primary font-light group-hover:text-primary ${isRow ? "text-[10px]" : "text-xs"}`}
+                className={`inline-flex items-center gap-1 sm:gap-1.5 tracking-wider sm:tracking-widest text-primary font-light group-hover:text-primary ${isRow ? "text-[10px]" : "text-[10px] sm:text-xs"}`}
               >
                 לפרטים
-                <ArrowLeft className={isRow ? "w-3 h-3" : "w-4 h-4"} />
+                <ArrowLeft className={isRow ? "w-3 h-3" : "w-3 h-3 sm:w-4 sm:h-4"} />
               </motion.span>
             </div>
           </div>
