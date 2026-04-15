@@ -108,10 +108,20 @@ export default function ProductCard({ product, index }) {
               const score = typeof product.hardness === "number"
                 ? product.hardness
                 : (hardnessMap[product.hardness] ?? 5);
+              // Map a numeric score back to a Hebrew label for display.
+              const scoreToLabel = (n) => {
+                if (n <= 3) return "רך";
+                if (n <= 5) return "בינוני";
+                if (n <= 7) return "בינוני-קשיח";
+                return "קשיח";
+              };
+              const label = typeof product.hardness === "string"
+                ? product.hardness
+                : scoreToLabel(score);
               return (
                 <div className="space-y-1">
                   <p className="text-[11px] text-muted-foreground font-light">
-                    {typeof product.hardness === "string" ? product.hardness : "קשיחות"} — {score}/10
+                    {label} — {score}/10
                   </p>
                   <div className="w-full h-[3px] rounded-full bg-foreground/5 overflow-hidden">
                     <motion.div
