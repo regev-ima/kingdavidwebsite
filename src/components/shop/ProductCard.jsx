@@ -50,7 +50,7 @@ export default function ProductCard({ product, index }) {
             {/* Soft vignette for legibility */}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-500" />
 
-            {/* Top-right: badges */}
+            {/* Top-right: discount badge only (keep the image clean) */}
             <div className="absolute top-3 right-3 flex flex-col gap-2 items-end z-10">
               {pricing.badgeLabel && (
                 <Badge className="bg-destructive text-destructive-foreground font-bold text-xs px-2.5 py-1 tracking-wide shadow-lg">
@@ -59,9 +59,6 @@ export default function ProductCard({ product, index }) {
               )}
               {pricing.isOnSaleNow && !pricing.badgeLabel && (
                 <Badge className="bg-destructive text-destructive-foreground text-xs px-2.5 py-1">מבצע</Badge>
-              )}
-              {pricing.saleEndsAt && pricing.isOnSaleNow && (
-                <SaleCountdown endsAt={pricing.saleEndsAt} compact />
               )}
             </div>
 
@@ -129,8 +126,15 @@ export default function ProductCard({ product, index }) {
               );
             })()}
 
+            {/* Countdown — right above the price (only if active) */}
+            {pricing.isOnSaleNow && pricing.saleEndsAt && (
+              <div className="pt-1">
+                <SaleCountdown endsAt={pricing.saleEndsAt} variant="compact" />
+              </div>
+            )}
+
             {/* Price row */}
-            <div className="flex items-end justify-between pt-2">
+            <div className="flex items-end justify-between pt-1">
               <div className="flex items-baseline gap-2 flex-wrap">
                 {pricing.isOnSaleNow ? (
                   <>

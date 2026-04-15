@@ -80,14 +80,17 @@ export function computeEffectivePrice(product, variation, now = new Date()) {
 }
 
 /**
- * Format a countdown for sale_ends_at. Returns:
- *   { totalMs, days, hours, minutes, seconds, expired, labelLong, labelShort }
+ * Format a countdown for sale_ends_at. Returns structured pieces plus a
+ * few presentation helpers — no bidi hacks required.
  */
 export function countdownTo(endDate, now = new Date()) {
   if (!endDate) {
     return {
       totalMs: 0, days: 0, hours: 0, minutes: 0, seconds: 0,
-      expired: true, labelLong: null, labelShort: null,
+      expired: true,
+      primaryLabel: null,  // biggest unit only (for compact pill)
+      fullLabel: null,     // "Xי Yש Zד Wש"
+      parts: [],           // [{ value, unit: 'days'|'hours'|'minutes'|'seconds' }]
     };
   }
   const end = endDate instanceof Date ? endDate : new Date(endDate);
@@ -98,13 +101,29 @@ export function countdownTo(endDate, now = new Date()) {
   const seconds = Math.floor((totalMs % (60 * 1000)) / 1000);
   const expired = totalMs <= 0;
 
-  const pad = (n) => String(n).padStart(2, "0");
-  const labelLong =
-    days > 0
-      ? `נותרו ${days}י ${hours}ש ${minutes}ד`
-      : `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-  const labelShort =
-    days > 0 ? `${days}י ${hours}ש` : `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  const pluralize = (n, singular, plural) => (n === 1 ? singular : plural);
 
-  return { totalMs, days, hours, minutes, seconds, expired, labelLong, labelShort };
+  let primaryLabel = null;
+  if (days > 0) primaryLabel = `${days} ${pluralize(days, "יום", "ימים")}`;
+  else if (hours > 0) primaryLabel = `${hours} ${pluralize(hours, "שעה", "שעות")}`;
+  else if (minutes > 0) primaryLabel = `${minutes} ${pluralize(minutes, "דקה", "דקות")}`;
+  else primaryLabel = `${seconds} ${pluralize(seconds, "שנייה", "שניות")}`;
+
+  const parts = [
+    { value: days,    unit: "days",    label: pluralize(days,    "יום", "ימים") },
+    { value: hours,   unit: "hours",   label: pluralize(hours,   "שעה", "שעות") },
+    { value: minutes, unit: "minutes", label: pluralize(minutes, "דקה", "דקות") },
+    { value: seconds, unit: "seconds", label: pluralize(seconds, "שנייה", "שניות") },
+  ];
+
+  // Drop leading zero units so we don't show "0 ימים 2 שעות"
+  let trimmed = parts;
+  while (trimmed.length > 1 && trimmed[0].value === 0) trimmed = trimmed.slice(1);
+
+  const fullLabel = trimmed.map((p) => `${p.value} ${p.label}`).join(" : ");
+
+  return {
+    totalMs, days, hours, minutes, seconds, expired,
+    primaryLabel, fullLabel, parts,
+  };
 }
