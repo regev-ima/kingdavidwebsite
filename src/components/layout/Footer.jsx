@@ -5,9 +5,9 @@ import { CrownOrnament } from "@/components/ui/royal-ornament";
 
 export default function Footer() {
   return (
-    <footer className="bg-[hsl(225,20%,3%)] border-t border-primary/10 relative">
+    <footer className="bg-background border-t border-primary/10 relative">
       {/* Crown ornament centered on top border */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[hsl(225,20%,3%)] px-4">
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-background px-4">
         <CrownOrnament />
       </div>
 
