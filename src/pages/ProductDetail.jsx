@@ -15,6 +15,7 @@ import ProductReviewsCarousel from "@/components/shop/ProductReviewsCarousel";
 import { motion } from "framer-motion";
 import { computeEffectivePrice } from "@/lib/pricing";
 import SaleCountdown from "@/components/shop/SaleCountdown";
+import HardnessScale from "@/components/shop/HardnessScale";
 import { priceForAddon, addonsForProduct } from "@/api/base44Client";
 
 // Estimated delivery date (14 business days from now, updated)
@@ -329,39 +330,31 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* Quick Specs */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-foreground/60 pb-5 mb-4 border-b border-white/[0.06]">
-              {product.height_cm && (
+            {/* Quick Specs — product-level only (dimensions).
+                Warranty / shipping / trial live in the Trust Signals
+                grid below the CTA so they aren't duplicated. */}
+            {product.height_cm && (
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-foreground/60 pb-5 mb-5 border-b border-foreground/10">
                 <span className="flex items-center gap-1.5"><ArrowUpDown className="w-4 h-4 text-primary" /> גובה: {product.height_cm} ס"מ</span>
-              )}
-              {product.hardness && (
-                <span className="flex items-center gap-1.5"><Layers className="w-4 h-4 text-primary" /> קשיחות: {product.hardness}/10 ({product.hardness > 7 ? "קשיח" : product.hardness > 5 ? "בינוני-קשיח" : product.hardness > 3 ? "בינוני" : "רך"})</span>
-              )}
-              {product.has_trial_period && (
-                <span className="flex items-center gap-1.5"><Moon className="w-4 h-4 text-primary" /> 30 לילות ניסיון</span>
-              )}
-              <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-primary" /> אחריות {product.warranty_years ?? 10} שנה</span>
-            </div>
+              </div>
+            )}
 
-            {/* Trust Signals — moved here, below specs */}
-            <div className={`grid ${product.has_trial_period ? "grid-cols-3" : "grid-cols-2"} gap-3 mb-6`}>
-              <div className="glass rounded-xl p-3 text-center">
-                <Shield className="w-5 h-5 text-primary mx-auto mb-1" />
-                <span className="text-xs text-foreground/70">אחריות {product.warranty_years ?? 10} שנה</span>
-              </div>
-              <div className="glass rounded-xl p-3 text-center">
-                <Truck className="w-5 h-5 text-primary mx-auto mb-1" />
-                <span className="text-xs text-foreground/70">משלוח עד הבית</span>
-              </div>
-              {product.has_trial_period && (
-                <div className="glass rounded-xl p-3 text-center">
-                  <RotateCcw className="w-5 h-5 text-primary mx-auto mb-1" />
-                  <span className="text-xs text-foreground/70">30 לילות ניסיון</span>
+            {/* Hardness scale — 10-dot indicator (designed to feel
+                editorial; replaces the older generic progress bar). */}
+            {product.hardness && (
+              <div className="mb-6 pb-5 border-b border-foreground/10">
+                <div className="flex items-baseline justify-between mb-3">
+                  <span className="text-sm font-medium text-foreground/80 inline-flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-primary" />
+                    דרגת קושי
+                  </span>
+                  <span className="text-xs text-foreground/55">
+                    {product.hardness > 7 ? "קשיח" : product.hardness > 5 ? "בינוני-קשיח" : product.hardness > 3 ? "בינוני" : "רך"}
+                  </span>
                 </div>
-              )}
-            </div>
-
-
+                <HardnessScale value={product.hardness} size="md" />
+              </div>
+            )}
 
             {/* Legacy "ארגז מצעים" toggle replaced by the full Addons list
                 below (fed from the CRM's product_addons table). */}
@@ -475,15 +468,23 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* Estimated Delivery */}
-            <div className="flex items-center gap-3 mb-5 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-              <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
-                <Truck className="w-4 h-4 text-emerald-400" />
+            {/* Trust Signals — placed below the CTA, single row,
+                not duplicated with anything above. */}
+            <div className={`grid ${product.has_trial_period ? "grid-cols-3" : "grid-cols-2"} gap-3 mb-5`}>
+              <div className="glass rounded-xl p-3 text-center">
+                <Shield className="w-5 h-5 text-primary mx-auto mb-1" />
+                <span className="text-xs text-foreground/70">אחריות {product.warranty_years ?? 10} שנה</span>
               </div>
-              <div>
-                <p className="text-xs text-emerald-400/80 font-medium mb-0.5">🎉 המוצר מוכן למשלוח!</p>
-                <p className="text-sm text-foreground/80">יגיע אליכם עד <strong className="text-emerald-400">{getEstimatedDelivery()}</strong></p>
+              <div className="glass rounded-xl p-3 text-center">
+                <Truck className="w-5 h-5 text-primary mx-auto mb-1" />
+                <span className="text-xs text-foreground/70">משלוח עד הבית</span>
               </div>
+              {product.has_trial_period && (
+                <div className="glass rounded-xl p-3 text-center">
+                  <RotateCcw className="w-5 h-5 text-primary mx-auto mb-1" />
+                  <span className="text-xs text-foreground/70">30 לילות ניסיון</span>
+                </div>
+              )}
             </div>
 
             {/* Phone + custom sizes */}

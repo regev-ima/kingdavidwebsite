@@ -5,6 +5,7 @@ import { Eye, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { computeEffectivePrice } from "@/lib/pricing";
 import SaleCountdown from "@/components/shop/SaleCountdown";
+import HardnessScale from "@/components/shop/HardnessScale";
 
 export default function ProductCard({ product, index }) {
   const [hovered, setHovered] = useState(false);
@@ -109,30 +110,9 @@ export default function ProductCard({ product, index }) {
               const score = typeof product.hardness === "number"
                 ? product.hardness
                 : (hardnessMap[product.hardness] ?? 5);
-              // Map a numeric score back to a Hebrew label for display.
-              const scoreToLabel = (n) => {
-                if (n <= 3) return "רך";
-                if (n <= 5) return "בינוני";
-                if (n <= 7) return "בינוני-קשיח";
-                return "קשיח";
-              };
-              const label = typeof product.hardness === "string"
-                ? product.hardness
-                : scoreToLabel(score);
               return (
-                <div className="space-y-1">
-                  <p className="text-[11px] text-muted-foreground font-light">
-                    {label} — {score}/10
-                  </p>
-                  <div className="w-full h-[3px] rounded-full bg-foreground/5 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${(score / 10) * 100}%` }}
-                      transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-                      viewport={{ once: true }}
-                      className="h-full rounded-full bg-gradient-to-l from-primary to-primary/60"
-                    />
-                  </div>
+                <div className="pt-1">
+                  <HardnessScale value={score} size="sm" />
                 </div>
               );
             })()}
