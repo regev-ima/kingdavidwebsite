@@ -704,70 +704,96 @@ export default function ProductDetail() {
       )}
 
       {/* ===== SECTION 5: Divider + Specs Strip ===== */}
-      <SectionDivider />
-      <FadeInSection>
-        <div className="py-16 md:py-20">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <h2 className="text-2xl font-bold text-foreground mb-8 text-center">פרטי מוצר</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {product.height_cm && (
-                <div className="glass rounded-2xl p-5 text-center group hover:border-primary/20 transition-all">
-                  <div className="w-12 h-12 mx-auto mb-3 text-primary">
-                    <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-                      <rect x="16" y="8" width="16" height="32" rx="3" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M24 12v24" stroke="currentColor" strokeWidth="1.2" strokeDasharray="2 2" opacity="0.4"/>
-                      <path d="M10 14h4M10 34h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      <path d="M12 14v20" stroke="currentColor" strokeWidth="1.2"/>
-                      <path d="M34 20h4M34 28h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
-                    </svg>
+      {(() => {
+        const specs = [];
+        if (product.height_cm) {
+          specs.push({
+            label: "גובה המזרן",
+            value: `כ-${product.height_cm} ס"מ`,
+            icon: (
+              <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
+                <rect x="16" y="8" width="16" height="32" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M24 12v24" stroke="currentColor" strokeWidth="1.2" strokeDasharray="2 2" opacity="0.4"/>
+                <path d="M10 14h4M10 34h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M12 14v20" stroke="currentColor" strokeWidth="1.2"/>
+                <path d="M34 20h4M34 28h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
+              </svg>
+            ),
+          });
+        }
+        if (product.hardness) {
+          specs.push({
+            label: "דרגת קשיחות",
+            value: `${product.hardness > 6 ? "קשיח" : product.hardness > 4 ? "חצי-קשיח" : "רך"} (${product.hardness}/10)`,
+            icon: (
+              <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
+                <rect x="8" y="20" width="32" height="16" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M14 24c0 3 2.5 6 5 6s5-3 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                <path d="M26 24c0 3 2.5 6 5 6s5-3 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                <circle cx="36" cy="12" r="6" stroke="currentColor" strokeWidth="1.5"/>
+                <text x="36" y="15" textAnchor="middle" fontSize="8" fill="currentColor" fontWeight="700">?</text>
+              </svg>
+            ),
+          });
+        }
+        specs.push({
+          label: "סוג בד",
+          value: "כותנה איכותי",
+          icon: (
+            <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
+              <rect x="10" y="10" width="28" height="28" rx="4" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M16 16v16M22 14v20M28 16v16M34 18v12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity="0.6"/>
+              <path d="M14 38c2-3 4-4 6-4s4 1 6 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+              <path d="M26 38c2-3 4-4 6-4s4 1 4 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+          ),
+        });
+        if (product.warranty_years) {
+          specs.push({
+            label: "אחריות",
+            value: `${product.warranty_years} שנים`,
+            icon: (
+              <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
+                <path d="M24 6l16 6v12c0 10-8 16-16 18C16 40 8 34 8 24V12l16-6z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                <path d="M18 24l4 4 8-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            ),
+          });
+        }
+        // Pick column count & container width based on number of specs so a
+        // single/partial set doesn't leave huge empty gaps in the grid.
+        const gridByCount = {
+          1: "sm:grid-cols-1 max-w-xs",
+          2: "sm:grid-cols-2 max-w-xl",
+          3: "sm:grid-cols-3 max-w-4xl",
+          4: "sm:grid-cols-2 lg:grid-cols-4 max-w-5xl",
+        };
+        const gridClass = gridByCount[specs.length] || "sm:grid-cols-3 max-w-4xl";
+        return (
+          <>
+            <SectionDivider />
+            <FadeInSection>
+              <div className="py-16 md:py-20">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6">
+                  <h2 className="text-2xl font-bold text-foreground mb-8 text-center">פרטי מוצר</h2>
+                  <div className={`grid grid-cols-1 ${gridClass} gap-4 mx-auto`}>
+                    {specs.map((spec, i) => (
+                      <div
+                        key={i}
+                        className="glass rounded-2xl p-5 text-center group hover:border-primary/20 transition-all"
+                      >
+                        <div className="w-12 h-12 mx-auto mb-3 text-primary">{spec.icon}</div>
+                        <p className="text-xs text-muted-foreground mb-1">{spec.label}</p>
+                        <p className="font-bold text-foreground">{spec.value}</p>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-xs text-muted-foreground mb-1">גובה המזרן</p>
-                  <p className="font-bold text-foreground">כ-{product.height_cm} ס"מ</p>
                 </div>
-              )}
-              {product.hardness && (
-                <div className="glass rounded-2xl p-5 text-center group hover:border-primary/20 transition-all">
-                  <div className="w-12 h-12 mx-auto mb-3 text-primary">
-                    <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-                      <rect x="8" y="20" width="32" height="16" rx="3" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M14 24c0 3 2.5 6 5 6s5-3 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                      <path d="M26 24c0 3 2.5 6 5 6s5-3 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                      <circle cx="36" cy="12" r="6" stroke="currentColor" strokeWidth="1.5"/>
-                      <text x="36" y="15" textAnchor="middle" fontSize="8" fill="currentColor" fontWeight="700">?</text>
-                    </svg>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-1">דרגת קשיחות</p>
-                  <p className="font-bold text-foreground">{product.hardness > 6 ? "קשיח" : product.hardness > 4 ? "חצי-קשיח" : "רך"} ({product.hardness}/10)</p>
-                </div>
-              )}
-              <div className="glass rounded-2xl p-5 text-center group hover:border-primary/20 transition-all">
-                <div className="w-12 h-12 mx-auto mb-3 text-primary">
-                  <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-                    <rect x="10" y="10" width="28" height="28" rx="4" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M16 16v16M22 14v20M28 16v16M34 18v12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity="0.6"/>
-                    <path d="M14 38c2-3 4-4 6-4s4 1 6 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                    <path d="M26 38c2-3 4-4 6-4s4 1 4 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <p className="text-xs text-muted-foreground mb-1">סוג בד</p>
-                <p className="font-bold text-foreground">כותנה איכותי</p>
               </div>
-              {product.warranty_years && (
-                <div className="glass rounded-2xl p-5 text-center group hover:border-primary/20 transition-all">
-                  <div className="w-12 h-12 mx-auto mb-3 text-primary">
-                    <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-                      <path d="M24 6l16 6v12c0 10-8 16-16 18C16 40 8 34 8 24V12l16-6z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-                      <path d="M18 24l4 4 8-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-1">אחריות</p>
-                  <p className="font-bold text-foreground">{product.warranty_years} שנים</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </FadeInSection>
+            </FadeInSection>
+          </>
+        );
+      })()}
 
       {/* ===== SECTION 6: Technologies ===== */}
       {product.technologies?.length > 0 && (
