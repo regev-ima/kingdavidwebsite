@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { computeEffectivePrice } from "@/lib/pricing";
 import SaleCountdown from "@/components/shop/SaleCountdown";
 import HardnessScale from "@/components/shop/HardnessScale";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { priceForAddon, addonsForProduct } from "@/api/base44Client";
 import { optimizeImage, optimizeSrcSet } from "@/lib/image";
 
@@ -34,16 +35,6 @@ function getEstimatedDelivery() {
   const fmt = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
   return `${fmt(start)} – ${fmt(end)}`;
 }
-
-// Feature icons mapping
-const featureIcons = [
-  <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><path d="M20 4c-2 4-6 6-6 12a6 6 0 0012 0c0-6-4-8-6-12z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M14 28c2 4 4 6 6 6s4-2 6-6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>,
-  <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><rect x="6" y="14" width="28" height="14" rx="3" stroke="currentColor" strokeWidth="1.3"/><path d="M12 14V8M28 14V8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M12 8h16" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>,
-  <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><circle cx="20" cy="20" r="14" stroke="currentColor" strokeWidth="1.3"/><path d="M20 10v6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="20" cy="20" r="2" fill="currentColor"/></svg>,
-  <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><path d="M20 4l10 4v8c0 8-5 12-10 14C15 28 10 24 10 16V8l10-4z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M16 18l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><rect x="4" y="22" width="32" height="8" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M8 20c2-6 4-8 6-8s4 1 6 4c2 3 4 4 6 4s4-1 6-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
-  <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><rect x="6" y="6" width="28" height="28" rx="4" stroke="currentColor" strokeWidth="1.3"/><path d="M14 14v12M20 12v16M26 14v12" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.6"/></svg>,
-];
 
 // Section divider component
 function SectionDivider() {
@@ -556,12 +547,54 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {/* Product description — right under the price & sale banner */}
-            {product.description && (
-              <div className="mb-6 pb-5 border-b border-foreground/10">
-                <p className="text-sm md:text-[15px] leading-relaxed text-foreground/75 whitespace-pre-line">
-                  {product.description}
-                </p>
+            {/* Product description + accordion (על המזרן / בתוך המזרן) */}
+            {(product.description || product.features?.length > 0 || product.technologies?.length > 0) && (
+              <div className="mb-6 pb-5 border-b border-foreground/10 space-y-4">
+                {product.description && (
+                  <p className="text-sm md:text-[15px] leading-relaxed text-foreground/75 whitespace-pre-line">
+                    {product.description}
+                  </p>
+                )}
+
+                {(product.features?.length > 0 || product.technologies?.length > 0) && (
+                  <Accordion type="multiple" className="w-full border-t border-foreground/10 pt-1" dir="rtl">
+                    {product.features?.length > 0 && (
+                      <AccordionItem value="about" className="border-b border-foreground/10">
+                        <AccordionTrigger className="text-sm font-semibold text-foreground py-3 hover:no-underline">
+                          על המזרן
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <ul className="space-y-1.5 text-sm text-foreground/75 pr-4 list-disc marker:text-primary/60">
+                            {product.features.map((f, i) => (
+                              <li key={i}>{f}</li>
+                            ))}
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
+                    {product.technologies?.length > 0 && (
+                      <AccordionItem value="inside" className="border-b-0">
+                        <AccordionTrigger className="text-sm font-semibold text-foreground py-3 hover:no-underline">
+                          בתוך המזרן
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <ul className="space-y-2 text-sm text-foreground/75 pr-4 list-disc marker:text-primary/60">
+                            {product.technologies.map((tech, i) => {
+                              const name = typeof tech === "string" ? tech : tech.name;
+                              const desc = typeof tech !== "string" ? tech.description : null;
+                              return (
+                                <li key={i}>
+                                  <span className="font-medium text-foreground">{name}</span>
+                                  {desc && <span className="text-foreground/60"> — {desc}</span>}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
+                  </Accordion>
+                )}
               </div>
             )}
 
@@ -822,228 +855,6 @@ export default function ProductDetail() {
                   <h3 className="font-bold text-primary text-base mb-2">{item.title}</h3>
                   <p className="text-sm text-foreground/60 leading-relaxed">{item.desc}</p>
                 </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </FadeInSection>
-
-      {/* (Section 3 moved up next to the price/hero; description now lives
-           directly under the sale banner in the product info column.) */}
-
-      {/* ===== SECTION 4: Divider + Features ===== */}
-      {product.features?.length > 0 && (
-        <>
-          <SectionDivider />
-          <FadeInSection>
-            <div className="py-16 md:py-20">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6">
-                <h2 className="text-2xl font-bold text-foreground mb-8 text-center">תכונות המוצר</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {product.features.map((f, i) => {
-                    const total = product.features.length;
-                    const cols = 3;
-                    const lastRowCount = total % cols || cols;
-                    const isLastRow = i >= total - lastRowCount;
-                    const isAloneInRow = lastRowCount === 1 && isLastRow;
-                    return (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 16 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: i * 0.08 }}
-                        className={`glass-card rounded-2xl p-6 text-center border border-primary/10 hover:border-primary/20 transition-all ${isAloneInRow ? "lg:col-start-2" : ""}`}
-                      >
-                        <div className="w-10 h-10 mx-auto mb-4 text-primary">
-                          {featureIcons[i % featureIcons.length]}
-                        </div>
-                        <p className="text-foreground/80 text-sm leading-relaxed">{f}</p>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </FadeInSection>
-        </>
-      )}
-
-      {/* ===== SECTION 5: Divider + Specs Strip ===== */}
-      {(() => {
-        const specs = [];
-        if (product.height_cm) {
-          specs.push({
-            label: "גובה המזרן",
-            value: `כ-${product.height_cm} ס"מ`,
-            icon: (
-              <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-                <rect x="16" y="8" width="16" height="32" rx="3" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M24 12v24" stroke="currentColor" strokeWidth="1.2" strokeDasharray="2 2" opacity="0.4"/>
-                <path d="M10 14h4M10 34h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M12 14v20" stroke="currentColor" strokeWidth="1.2"/>
-                <path d="M34 20h4M34 28h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
-              </svg>
-            ),
-          });
-        }
-        if (product.hardness) {
-          specs.push({
-            label: "דרגת קשיחות",
-            value: `${product.hardness > 6 ? "קשיח" : product.hardness > 4 ? "חצי-קשיח" : "רך"} (${product.hardness}/10)`,
-            icon: (
-              <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-                <rect x="8" y="20" width="32" height="16" rx="3" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M14 24c0 3 2.5 6 5 6s5-3 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                <path d="M26 24c0 3 2.5 6 5 6s5-3 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                <circle cx="36" cy="12" r="6" stroke="currentColor" strokeWidth="1.5"/>
-                <text x="36" y="15" textAnchor="middle" fontSize="8" fill="currentColor" fontWeight="700">?</text>
-              </svg>
-            ),
-          });
-        }
-        specs.push({
-          label: "סוג בד",
-          value: "כותנה איכותי",
-          icon: (
-            <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-              <rect x="10" y="10" width="28" height="28" rx="4" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M16 16v16M22 14v20M28 16v16M34 18v12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity="0.6"/>
-              <path d="M14 38c2-3 4-4 6-4s4 1 6 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-              <path d="M26 38c2-3 4-4 6-4s4 1 4 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-            </svg>
-          ),
-        });
-        if (product.warranty_years) {
-          specs.push({
-            label: "אחריות",
-            value: `${product.warranty_years} שנים`,
-            icon: (
-              <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-                <path d="M24 6l16 6v12c0 10-8 16-16 18C16 40 8 34 8 24V12l16-6z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-                <path d="M18 24l4 4 8-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            ),
-          });
-        }
-        // Pick column count & container width based on number of specs so a
-        // single/partial set doesn't leave huge empty gaps in the grid.
-        const gridByCount = {
-          1: "sm:grid-cols-1 max-w-xs",
-          2: "sm:grid-cols-2 max-w-xl",
-          3: "sm:grid-cols-3 max-w-4xl",
-          4: "sm:grid-cols-2 lg:grid-cols-4 max-w-5xl",
-        };
-        const gridClass = gridByCount[specs.length] || "sm:grid-cols-3 max-w-4xl";
-        return (
-          <>
-            <SectionDivider />
-            <FadeInSection>
-              <div className="py-16 md:py-20">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-8 text-center">פרטי מוצר</h2>
-                  <div className={`grid grid-cols-1 ${gridClass} gap-4 mx-auto`}>
-                    {specs.map((spec, i) => (
-                      <div
-                        key={i}
-                        className="glass rounded-2xl p-5 text-center group hover:border-primary/20 transition-all"
-                      >
-                        <div className="w-12 h-12 mx-auto mb-3 text-primary">{spec.icon}</div>
-                        <p className="text-xs text-muted-foreground mb-1">{spec.label}</p>
-                        <p className="font-bold text-foreground">{spec.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </FadeInSection>
-          </>
-        );
-      })()}
-
-      {/* ===== SECTION 6: Technologies ===== */}
-      {product.technologies?.length > 0 && (
-        <>
-          <SectionDivider />
-          <FadeInSection>
-            <div className="py-16 md:py-20">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6">
-                <h2 className="text-2xl font-bold text-foreground mb-8 text-center">טכנולוגיות ומערכות</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {product.technologies.map((tech, i) => {
-                    const techName = typeof tech === "string" ? tech : tech.name;
-                    const techDesc = typeof tech !== "string" ? tech.description : null;
-                    // Pick icon based on tech name keywords
-                    const iconSvg = techName.includes("Visco") || techName.includes("ויסקו") ? (
-                      <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><path d="M20 6c-8 0-14 6-14 14s6 14 14 14 14-6 14-14S28 6 20 6z" stroke="currentColor" strokeWidth="1.3"/><path d="M14 20c0 4 3 6 6 6s6-2 6-6-3-6-6-6-6 2-6 6z" stroke="currentColor" strokeWidth="1.3"/><path d="M20 14v-4M20 30v-4M26 20h4M14 20h-4" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.5"/></svg>
-                    ) : techName.includes("FLIP") || techName.includes("ONE") ? (
-                      <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><rect x="6" y="14" width="28" height="14" rx="3" stroke="currentColor" strokeWidth="1.3"/><path d="M12 14V8M28 14V8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M12 8h16" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M20 5v3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M17 32l3-4 3 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><line x1="20" y1="28" x2="20" y2="34" stroke="currentColor" strokeWidth="1.2"/></svg>
-                    ) : techName.includes("Comfort") || techName.includes("Zone") || techName.includes("5D") ? (
-                      <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><rect x="4" y="22" width="32" height="8" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M8 22v8M14 22v8M20 22v8M26 22v8M32 22v8" stroke="currentColor" strokeWidth="0.8" strokeDasharray="1.5 1.5" opacity="0.4"/><path d="M8 20c2-6 4-8 6-8s4 1 6 4c2 3 4 4 6 4s4-1 6-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="10" cy="16" r="1" fill="currentColor"/><circle cx="20" cy="12" r="1" fill="currentColor"/><circle cx="30" cy="16" r="1" fill="currentColor"/></svg>
-                    ) : techName.includes("Balance") || techName.includes("איזון") ? (
-                      <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><path d="M20 6v28" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M8 14h24" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M8 14l-2 10h12l-2-10" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M24 14l-2 10h12l-2-10" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M16 36h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                    ) : techName.includes("Circu") || techName.includes("Flow") || techName.includes("סירקו") ? (
-                      <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><circle cx="20" cy="20" r="14" stroke="currentColor" strokeWidth="1.3"/><path d="M20 10a10 10 0 017.07 2.93" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M30 20a10 10 0 01-2.93 7.07" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M20 30a10 10 0 01-7.07-2.93" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M10 20a10 10 0 012.93-7.07" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="20" cy="20" r="4" stroke="currentColor" strokeWidth="1.2"/></svg>
-                    ) : techName.includes("POCKET") || techName.includes("קפיצ") ? (
-                      <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><path d="M10 30c0-6 2-10 4-10s4 4 4 10" stroke="currentColor" strokeWidth="1.3"/><path d="M18 30c0-6 2-10 4-10s4 4 4 10" stroke="currentColor" strokeWidth="1.3"/><path d="M26 30c0-6 2-10 4-10s4 4 4 10" stroke="currentColor" strokeWidth="1.3"/><rect x="6" y="30" width="28" height="4" rx="1" stroke="currentColor" strokeWidth="1.3"/><rect x="6" y="8" width="28" height="4" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg>
-                    ) : (
-                      <svg viewBox="0 0 40 40" fill="none" className="w-full h-full"><circle cx="20" cy="20" r="14" stroke="currentColor" strokeWidth="1.3"/><path d="M20 10v6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="20" cy="20" r="2" fill="currentColor"/></svg>
-                    );
-                    return (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 12 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: i * 0.06 }}
-                        className="flex items-center gap-4 glass rounded-xl p-4 hover:border-primary/20 transition-all"
-                      >
-                        <div className="w-10 h-10 text-primary shrink-0">{iconSvg}</div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-foreground text-sm">{techName}</p>
-                          {techDesc && <p className="text-xs text-foreground/50 mt-0.5">{techDesc}</p>}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </FadeInSection>
-        </>
-      )}
-
-      {/* ===== SECTION 7: Materials ===== */}
-      <SectionDivider />
-      <FadeInSection>
-        <div className="py-16 md:py-20">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <h2 className="text-2xl font-bold text-foreground mb-8 text-center">בד וחומרים</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {[
-                { text: "בד כותנה איכותי", icon: <svg viewBox="0 0 36 36" fill="none" className="w-full h-full"><rect x="6" y="6" width="24" height="24" rx="4" stroke="currentColor" strokeWidth="1.3"/><path d="M12 12v12M18 10v16M24 12v12" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.5"/><path d="M10 30c3-2 5-3 8-3s5 1 8 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
-                { text: "אנטי-בקטריאלי והיפואלרגני", icon: <svg viewBox="0 0 36 36" fill="none" className="w-full h-full"><path d="M18 4l10 4v8c0 8-5 12-10 14C13 28 8 24 8 16V8l10-4z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M14 18l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-                { text: "נשימה טובה ומניעת הזעה", icon: <svg viewBox="0 0 36 36" fill="none" className="w-full h-full"><path d="M18 4c-2 4-6 6-6 12a6 6 0 0012 0c0-6-4-8-6-12z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M10 26c2 4 5 6 8 6s6-2 8-6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M14 20c0 2 2 3 4 3s4-1 4-3" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.5"/></svg> },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 glass rounded-xl p-4 hover:border-primary/20 transition-all">
-                  <div className="w-9 h-9 text-primary shrink-0">{item.icon}</div>
-                  <span className="text-sm text-foreground/80">{item.text}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Support Zones */}
-            <h2 className="text-2xl font-bold text-foreground mb-8 text-center mt-16">אזורי תמיכה</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {[
-                { text: "תמיכת קצה משופרת", icon: <svg viewBox="0 0 36 36" fill="none" className="w-full h-full"><rect x="4" y="14" width="28" height="10" rx="3" stroke="currentColor" strokeWidth="1.3"/><path d="M8 14v10M28 14v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M4 28h28" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.4"/></svg> },
-                { text: "פיזור משקל ולחץ אופטימלי", icon: <svg viewBox="0 0 36 36" fill="none" className="w-full h-full"><rect x="4" y="20" width="28" height="8" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M8 18v-4M14 16v-4M22 16v-4M28 18v-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><circle cx="8" cy="12" r="1.5" fill="currentColor" opacity="0.6"/><circle cx="14" cy="10" r="1.5" fill="currentColor" opacity="0.6"/><circle cx="22" cy="10" r="1.5" fill="currentColor" opacity="0.6"/><circle cx="28" cy="12" r="1.5" fill="currentColor" opacity="0.6"/></svg> },
-                { text: "תמיכה אנטומית מותאמת", icon: <svg viewBox="0 0 36 36" fill="none" className="w-full h-full"><path d="M8 28c2-10 4-16 6-16s4 3 4 8c0-5 2-8 4-8s4 6 6 16" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><rect x="4" y="28" width="28" height="4" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg> },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 glass rounded-xl p-4 hover:border-primary/20 transition-all">
-                  <div className="w-9 h-9 text-primary shrink-0">{item.icon}</div>
-                  <span className="text-sm text-foreground/80">{item.text}</span>
-                </div>
               ))}
             </div>
           </div>
