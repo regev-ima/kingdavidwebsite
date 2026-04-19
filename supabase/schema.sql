@@ -26,15 +26,25 @@
 --   base_cost             numeric
 --   warranty_years        int
 --   features              text       -- newline / comma separated
---   fabric_type           text       -- "סוג בד", e.g. "כותנה איכותי"
---   technologies          text       -- newline-separated; each line "Name" or "Name | Description"
---   materials             text       -- newline-separated; "בד וחומרים" cards
---   support_zones         text       -- newline-separated; "אזורי תמיכה" cards
 --   has_trial_period      boolean
 --   manager_notes         text
 --   category              text
 --   production_time_days  int
 --   is_sample             boolean
+
+-- product_attribute_catalog (added in migration 014)
+--   id             uuid
+--   category       text   -- 'technology' | 'fabric' | 'composition'
+--                         -- | 'transition_layer' | 'support_feature'
+--   name           text
+--   description    text
+--   display_order  int
+--   is_active      boolean
+
+-- product_attribute_links (added in migration 014)
+--   product_id    uuid -> products(id)
+--   attribute_id  uuid -> product_attribute_catalog(id)
+--   PRIMARY KEY (product_id, attribute_id)
 
 -- product_variations
 --   id            uuid
