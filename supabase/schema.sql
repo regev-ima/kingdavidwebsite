@@ -26,6 +26,10 @@
 --   base_cost             numeric
 --   warranty_years        int
 --   features              text       -- newline / comma separated
+--   fabric_type           text       -- "סוג בד", e.g. "כותנה איכותי"
+--   technologies          text       -- newline-separated; each line "Name" or "Name | Description"
+--   materials             text       -- newline-separated; "בד וחומרים" cards
+--   support_zones         text       -- newline-separated; "אזורי תמיכה" cards
 --   has_trial_period      boolean
 --   manager_notes         text
 --   category              text
