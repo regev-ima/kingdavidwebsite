@@ -129,21 +129,22 @@
     opacity: 1 !important;
   }
 
-  /* Ambient page atmosphere for the light theme — large blurred pastel
-     orbs (peach / cream / pink / gold) diffusing behind the content.
-     The orbs tile vertically every 150vh so the whole document stays
-     bathed in warm glow no matter how far you scroll — matches the
-     brand reference where the atmosphere repeats down the page.      */
+  /* Ambient page atmosphere for the light theme — oversized, very soft
+     pastel orbs that overlap to create one continuous flowing warm
+     glow across the entire document. Long fade (95%→transparent) and
+     low alpha so no edge is ever visible; the tile height is 200vh so
+     orbs from adjacent tiles blend smoothly across the seam.
+     Intentionally faint — a breath of colour, not a tint. */
   .light body {
     background:
-      radial-gradient(ellipse 55vw 45vh at 10% 8%,   hsla(32, 85%, 82%, 1)   0%, transparent 70%),
-      radial-gradient(ellipse 50vw 42vh at 90% 20%,  hsla(10, 85%, 85%, 1)   0%, transparent 70%),
-      radial-gradient(ellipse 45vw 40vh at 50% 38%,  hsla(45, 80%, 86%, 0.9) 0%, transparent 70%),
-      radial-gradient(ellipse 55vw 45vh at 8% 55%,   hsla(20, 85%, 85%, 1)   0%, transparent 70%),
-      radial-gradient(ellipse 50vw 42vh at 92% 72%,  hsla(5,  80%, 87%, 0.95) 0%, transparent 70%),
-      radial-gradient(ellipse 50vw 42vh at 50% 92%,  hsla(38, 80%, 86%, 0.9) 0%, transparent 70%),
+      radial-gradient(ellipse 80vw 70vh at 5% 10%,   hsla(28, 70%, 88%, 0.65) 0%, transparent 95%),
+      radial-gradient(ellipse 75vw 65vh at 95% 25%,  hsla(10, 70%, 90%, 0.60) 0%, transparent 95%),
+      radial-gradient(ellipse 90vw 70vh at 50% 45%,  hsla(42, 65%, 92%, 0.50) 0%, transparent 95%),
+      radial-gradient(ellipse 80vw 70vh at 5% 65%,   hsla(18, 70%, 90%, 0.60) 0%, transparent 95%),
+      radial-gradient(ellipse 75vw 65vh at 95% 80%,  hsla(5,  65%, 91%, 0.55) 0%, transparent 95%),
+      radial-gradient(ellipse 90vw 70vh at 50% 98%,  hsla(36, 65%, 92%, 0.45) 0%, transparent 95%),
       hsl(var(--background));
-    background-size: 100% 150vh;
+    background-size: 100% 200vh;
     background-repeat: repeat;
   }
 
