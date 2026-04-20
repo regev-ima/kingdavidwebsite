@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { X, Loader2 } from "lucide-react";
 import { parseHypReturnMessage } from "@/lib/hyp";
 
 // Full-screen modal that loads Hyp's hosted checkout in an iframe.
@@ -7,9 +7,11 @@ import { parseHypReturnMessage } from "@/lib/hyp";
 // (which Hyp redirects to as `Succesful` / `Failed`).
 export default function HypPaymentModal({ url, onSuccess, onFailure, onClose }) {
   const iframeRef = useRef(null);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
 
   useEffect(() => {
     if (!url) return;
+    setIframeLoaded(false);
     const handler = (event) => {
       const parsed = parseHypReturnMessage(event);
       if (!parsed) return;
@@ -24,10 +26,15 @@ export default function HypPaymentModal({ url, onSuccess, onFailure, onClose }) 
     if (!url) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKeyDown);
     };
-  }, [url]);
+  }, [url, onClose]);
 
   if (!url) return null;
 
@@ -47,12 +54,21 @@ export default function HypPaymentModal({ url, onSuccess, onFailure, onClose }) 
             <X className="w-4 h-4" />
           </button>
         </div>
-        <iframe
-          ref={iframeRef}
-          src={url}
-          title="תשלום Hyp"
-          className="w-full h-[calc(100%-52px)] bg-white"
-        />
+        <div className="relative w-full h-[calc(100%-52px)] bg-white">
+          {!iframeLoaded && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white">
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <p className="text-sm text-muted-foreground">טוען את דף הסליקה המאובטח...</p>
+            </div>
+          )}
+          <iframe
+            ref={iframeRef}
+            src={url}
+            title="תשלום Hyp"
+            onLoad={() => setIframeLoaded(true)}
+            className="w-full h-full"
+          />
+        </div>
       </div>
     </div>
   );

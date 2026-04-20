@@ -14,6 +14,7 @@ import OrderSummary from "@/components/shop/checkout/OrderSummary";
 import AddressAutocomplete from "@/components/shop/checkout/AddressAutocomplete";
 import HypPaymentModal from "@/components/shop/checkout/HypPaymentModal";
 import { buildHypIframeUrl, isHypConfigured } from "@/lib/hyp";
+import { sendOrderEmail } from "@/lib/orderEmail";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
@@ -54,6 +55,7 @@ export default function Checkout() {
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [hypIframeUrl, setHypIframeUrl] = useState(null);
+  const [completedOrder, setCompletedOrder] = useState(null);
 
   const {
     register,
@@ -118,24 +120,96 @@ export default function Checkout() {
   }
 
   if (orderComplete) {
+    const o = completedOrder;
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 py-12" dir="rtl">
-        <div className="glass-card p-8 md:p-12 max-w-lg w-full space-y-6">
-          <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto animate-bounce">
-            <CheckCircle2 className="w-10 h-10 text-green-400" />
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 md:py-12" dir="rtl">
+        <div className="glass-card p-6 md:p-10 space-y-6">
+          <div className="text-center space-y-3">
+            <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-8 h-8 text-green-500" />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">ההזמנה שלכם התקבלה!</h1>
+            <p className="text-sm text-muted-foreground">
+              מספר הזמנה: <span className="font-mono text-foreground">{orderNumber}</span>
+            </p>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              {paymentMethod === "phone" && "נציג יצור איתכם קשר בהקדם לסיום ההזמנה."}
+              {paymentMethod === "whatsapp" && "ההזמנה נשלחה בהצלחה דרך וואטסאפ."}
+              {paymentMethod === "credit" && "התשלום התקבל. נציג יצור איתכם קשר לאישור המשלוח."}
+            </p>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">ההזמנה שלכם התקבלה!</h1>
-          <p className="text-muted-foreground">
-            מספר הזמנה: <span className="font-mono text-foreground">{orderNumber}</span>
-          </p>
-          <p className="text-muted-foreground">
-            {paymentMethod === "phone" && "נציג יצור איתכם קשר בהקדם לסיום ההזמנה."}
-            {paymentMethod === "whatsapp" && "ההזמנה נשלחה בהצלחה דרך וואטסאפ."}
-            {paymentMethod === "credit" && "התשלום התקבל. אישור נשלח לאימייל שלך."}
-          </p>
+
+          {o && (
+            <>
+              {/* Items */}
+              <section className="border-t border-primary/10 pt-5">
+                <h2 className="text-sm font-semibold text-foreground mb-3">פריטים בהזמנה</h2>
+                <ul className="space-y-3">
+                  {o.items.map((item, i) => (
+                    <li key={i} className="flex items-start justify-between gap-3 text-sm">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-foreground truncate">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.size && <>{item.size} · </>}
+                          {item.withStorage && <>כולל ארגז מצעים · </>}
+                          כמות: {item.quantity}
+                        </p>
+                      </div>
+                      <span className="font-semibold text-foreground whitespace-nowrap">
+                        ₪{Number(item.lineTotal).toLocaleString()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              {/* Totals */}
+              <section className="border-t border-primary/10 pt-5 space-y-1.5 text-sm">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>סכום ביניים</span>
+                  <span>₪{Number(o.subtotal).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>משלוח</span>
+                  <span>{o.shipping ? `₪${Number(o.shipping).toLocaleString()}` : "חינם"}</span>
+                </div>
+                {o.withAssembly && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>הרכבה</span>
+                    <span>₪{Number(o.assembly).toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-foreground text-base pt-2 border-t border-primary/10 mt-2">
+                  <span>סה"כ לתשלום</span>
+                  <span>₪{Number(o.total).toLocaleString()}</span>
+                </div>
+              </section>
+
+              {/* Customer + delivery */}
+              <section className="border-t border-primary/10 pt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground mb-1.5">פרטי התקשרות</h3>
+                  <p className="text-foreground">{o.customer.fullName}</p>
+                  <p className="text-foreground/80" dir="ltr">{o.customer.phone}</p>
+                  <p className="text-foreground/80" dir="ltr">{o.customer.email}</p>
+                </div>
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground mb-1.5">כתובת למשלוח</h3>
+                  <p className="text-foreground">{o.delivery.address}</p>
+                  {o.delivery.apartment && (
+                    <p className="text-foreground/80">דירה {o.delivery.apartment}</p>
+                  )}
+                  {o.delivery.notes && (
+                    <p className="text-foreground/60 text-xs mt-1">הערה: {o.delivery.notes}</p>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
+
           <Button
             onClick={() => navigate("/Shop")}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground glow-gold h-14 w-full text-base"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground glow-gold h-12 w-full text-base"
           >
             חזרה לחנות
           </Button>
@@ -233,6 +307,24 @@ export default function Checkout() {
     }
   }
 
+  function snapshotOrder(num, data) {
+    return {
+      orderNumber: num,
+      paymentMethod,
+      customer: {
+        fullName: data.fullName,
+        phone: data.phone,
+        email: data.email,
+      },
+      delivery: {
+        address: data.formatted_address || `${data.street}, ${data.city}`,
+        apartment: data.apartment || "",
+        notes: data.notes || "",
+      },
+      ...getCheckoutPayload(),
+    };
+  }
+
   async function onSubmit(data) {
     const num = generateOrderNumber();
     setOrderNumber(num);
@@ -256,21 +348,27 @@ export default function Checkout() {
           description: "Hyp terminal לא מוגדר — נפתח דף סליקה להדמיה בלבד.",
         });
       }
+      setCompletedOrder(snapshotOrder(num, data));
       setHypIframeUrl(url);
       return;
     }
+
+    const snap = snapshotOrder(num, data);
+    setCompletedOrder(snap);
 
     if (paymentMethod === "whatsapp") {
       const msg = buildWhatsAppMessage(data);
       window.open(`https://wa.me/972549632221?text=${msg}`, "_blank");
     }
 
+    sendOrderEmail(snap);
     clearCart();
     setOrderComplete(true);
   }
 
   function handleHypSuccess() {
     setHypIframeUrl(null);
+    if (completedOrder) sendOrderEmail(completedOrder);
     clearCart();
     setOrderComplete(true);
   }
