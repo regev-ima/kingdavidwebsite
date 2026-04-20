@@ -137,7 +137,7 @@ export default function Shop() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <div className="relative pt-14 pb-10 md:pt-20 md:pb-14 overflow-hidden">
+      <div className="section-band-cream relative pt-14 pb-10 md:pt-20 md:pb-14 overflow-hidden">
         {/* decorative gold glow behind title */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-primary/5 via-transparent to-transparent" aria-hidden />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center relative">
