@@ -12,15 +12,15 @@ import CTASection from "../components/home/CTASection";
 export default function Home() {
   return (
     <div>
-      <div className="section-band-cream"><HeroSection /></div>
-      <div className="section-band-peach-soft"><FeaturedProducts /></div>
-      <div className="section-band-gold-glow"><TechnologiesSection /></div>
-      <div className="section-band-cream-warm"><TestimonialsSection /></div>
-      <div className="section-band-beige"><ClubSection /></div>
-      <div className="section-band-shipping"><StoryVideoSection /></div>
-      <div className="section-band-peach"><CategoriesSection /></div>
-      <div className="section-band-cream"><FeaturesSection /></div>
-      <div className="section-band-cream-warm"><CTASection /></div>
+      <HeroSection />
+      <FeaturedProducts />
+      <TechnologiesSection />
+      <TestimonialsSection />
+      <ClubSection />
+      <StoryVideoSection />
+      <CategoriesSection />
+      <FeaturesSection />
+      <CTASection />
     </div>
   );
 }

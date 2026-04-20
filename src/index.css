@@ -129,13 +129,20 @@
     opacity: 1 !important;
   }
 
-  /* Ambient page tint for the light theme — subtle cream gradient. */
+  /* Ambient page atmosphere for the light theme — large blurred pastel
+     orbs (peach / cream / pink / gold) floating behind the content.
+     Fixed-attachment so the glow follows the viewport while scrolling,
+     giving every page the same dreamy warm feel as the brand reference. */
   .light body {
     background:
-      radial-gradient(ellipse 100% 60% at 50% 0%,
-        hsl(42 55% 92%) 0%, transparent 70%),
-      radial-gradient(ellipse 100% 60% at 50% 100%,
-        hsl(42 55% 92%) 0%, transparent 70%),
+      radial-gradient(ellipse 55% 40% at 12% 6%,   hsla(35, 70%, 88%, 0.80) 0%, transparent 62%),
+      radial-gradient(ellipse 50% 38% at 88% 12%,  hsla(12, 70%, 90%, 0.75) 0%, transparent 62%),
+      radial-gradient(ellipse 45% 35% at 50% 28%,  hsla(45, 65%, 92%, 0.55) 0%, transparent 62%),
+      radial-gradient(ellipse 55% 40% at 8% 50%,   hsla(22, 70%, 90%, 0.70) 0%, transparent 62%),
+      radial-gradient(ellipse 50% 38% at 92% 58%,  hsla(8,  65%, 92%, 0.65) 0%, transparent 62%),
+      radial-gradient(ellipse 50% 38% at 50% 78%,  hsla(40, 65%, 92%, 0.55) 0%, transparent 62%),
+      radial-gradient(ellipse 55% 40% at 20% 96%,  hsla(18, 70%, 92%, 0.60) 0%, transparent 62%),
+      radial-gradient(ellipse 45% 35% at 80% 102%, hsla(30, 65%, 92%, 0.55) 0%, transparent 62%),
       hsl(var(--background));
     background-attachment: fixed;
   }
@@ -153,20 +160,6 @@
 }
 
 @layer components {
-  /* Section banding — subtle warm tints per page section, only applied
-     in light mode. Dark mode keeps the ambient gradient untouched.
-     Use these on full-width section wrappers to create the warm rhythm
-     shown in the brand reference (cream → peach → gold → peach).     */
-  .light .section-band-cream      { background-color: #f7f1e4; }
-  .light .section-band-cream-warm { background-color: #faf3e4; }
-  .light .section-band-peach-soft { background-color: #f5ecd9; }
-  .light .section-band-peach      { background-color: #fbeadb; }
-  .light .section-band-gold-glow  { background-color: #f9f1de; }
-  .light .section-band-beige      { background-color: #efe6cf; }
-  .light .section-band-shipping   {
-    background: linear-gradient(270deg, #f9e8d8 0%, #f7efe0 100%);
-  }
-
   /* Royal card */
   .royal-card {
     background: hsl(225 15% 8%);

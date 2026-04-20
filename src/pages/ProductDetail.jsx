@@ -393,8 +393,7 @@ export default function ProductDetail() {
       </div>
 
       {/* ===== SECTION 1: Hero — Image Gallery + Product Info ===== */}
-      <div className="section-band-cream">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 md:py-14">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 md:py-14">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Image Gallery — swipeable slider when there are multiple images */}
           <div className="space-y-3">
@@ -781,7 +780,6 @@ export default function ProductDetail() {
             </div>
           </div>
         </div>
-        </div>
       </div>
 
       {/* ===== SECTION 2: Divider ===== */}
@@ -789,7 +787,7 @@ export default function ProductDetail() {
 
       {/* ===== USP Cards ===== */}
       <FadeInSection>
-        <div className="section-band-peach-soft py-16 md:py-20">
+        <div className="py-16 md:py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
@@ -866,7 +864,7 @@ export default function ProductDetail() {
       {/* ===== SECTION 9: Shipping Info ===== */}
       <SectionDivider />
       <FadeInSection>
-        <div className="section-band-shipping py-16 md:py-20">
+        <div className="py-16 md:py-20">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
             <h2 className="text-2xl font-bold text-foreground mb-8 text-center">משלוחים ואספקה</h2>
             <div className={`grid grid-cols-1 ${product.has_trial_period ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-5 mb-10`}>
@@ -1013,7 +1011,7 @@ export default function ProductDetail() {
       {/* ===== SECTION 8: Reviews Carousel ===== */}
       <SectionDivider />
       <FadeInSection>
-        <div className="section-band-gold-glow py-16 md:py-20">
+        <div className="py-16 md:py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <ProductReviewsCarousel />
           </div>
@@ -1023,7 +1021,7 @@ export default function ProductDetail() {
       {/* ===== SECTION 11: Sleep Advisor CTA banner ===== */}
       <SectionDivider />
       <FadeInSection>
-        <div className="section-band-beige py-16 md:py-20">
+        <div className="py-16 md:py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="relative rounded-3xl overflow-hidden border border-primary/15 bg-gradient-to-l from-primary/[0.08] via-primary/[0.03] to-transparent">
               <div className="grid grid-cols-1 md:grid-cols-2 items-stretch">
@@ -1088,7 +1086,7 @@ export default function ProductDetail() {
         <>
           <SectionDivider />
           <FadeInSection>
-            <div className="section-band-peach py-16 md:py-20">
+            <div className="py-16 md:py-20">
               <div className="max-w-6xl mx-auto px-4 sm:px-6">
                 <h2 className="text-2xl font-bold text-foreground mb-8 text-center">מזרנים דומים</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -1105,7 +1103,7 @@ export default function ProductDetail() {
       {/* ===== SECTION 13: Share ===== */}
       <SectionDivider />
       <FadeInSection>
-        <div className="section-band-cream-warm py-10 md:py-14">
+        <div className="py-10 md:py-14">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <ShareButtons productName={product?.name} />
           </div>
