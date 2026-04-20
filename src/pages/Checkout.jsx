@@ -129,9 +129,9 @@ export default function Checkout() {
             מספר הזמנה: <span className="font-mono text-foreground">{orderNumber}</span>
           </p>
           <p className="text-muted-foreground">
-            {paymentMethod === "phone"
-              ? "נציג יצור איתכם קשר בהקדם לסיום ההזמנה."
-              : "ההזמנה נשלחה בהצלחה דרך וואטסאפ."}
+            {paymentMethod === "phone" && "נציג יצור איתכם קשר בהקדם לסיום ההזמנה."}
+            {paymentMethod === "whatsapp" && "ההזמנה נשלחה בהצלחה דרך וואטסאפ."}
+            {paymentMethod === "credit" && "התשלום התקבל. אישור נשלח לאימייל שלך."}
           </p>
           <Button
             onClick={() => navigate("/Shop")}
