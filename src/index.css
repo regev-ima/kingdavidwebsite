@@ -63,9 +63,11 @@
     --glass-blur-light: 8px;
   }
 
-  /* Light theme — cream background, deep navy text, gold accents */
+  /* Light theme — pure white background, deep navy text, gold accents.
+     The warm feel now comes entirely from the pastel-orb body gradient,
+     not from a base cream tone. */
   .light {
-    --background: 40 35% 97%;
+    --background: 0 0% 100%;
     --foreground: 225 30% 12%;
     --card: 0 0% 100%;
     --card-foreground: 225 30% 12%;
@@ -137,12 +139,10 @@
      Intentionally faint — a breath of colour, not a tint. */
   .light body {
     background:
-      radial-gradient(ellipse 80vw 70vh at 5% 10%,   hsla(28, 70%, 88%, 0.65) 0%, transparent 95%),
-      radial-gradient(ellipse 75vw 65vh at 95% 25%,  hsla(10, 70%, 90%, 0.60) 0%, transparent 95%),
-      radial-gradient(ellipse 90vw 70vh at 50% 45%,  hsla(42, 65%, 92%, 0.50) 0%, transparent 95%),
-      radial-gradient(ellipse 80vw 70vh at 5% 65%,   hsla(18, 70%, 90%, 0.60) 0%, transparent 95%),
-      radial-gradient(ellipse 75vw 65vh at 95% 80%,  hsla(5,  65%, 91%, 0.55) 0%, transparent 95%),
-      radial-gradient(ellipse 90vw 70vh at 50% 98%,  hsla(36, 65%, 92%, 0.45) 0%, transparent 95%),
+      radial-gradient(ellipse 28vw 22vh at 0% 5%,    hsla(28, 80%, 88%, 0.75) 0%, transparent 65%),
+      radial-gradient(ellipse 28vw 22vh at 100% 5%,  hsla(8,  80%, 90%, 0.70) 0%, transparent 65%),
+      radial-gradient(ellipse 28vw 22vh at 0% 95%,   hsla(18, 80%, 90%, 0.70) 0%, transparent 65%),
+      radial-gradient(ellipse 28vw 22vh at 100% 95%, hsla(4,  80%, 91%, 0.65) 0%, transparent 65%),
       hsl(var(--background));
     background-size: 100% 200vh;
     background-repeat: repeat;
