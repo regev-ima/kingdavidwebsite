@@ -19,15 +19,18 @@ function escapeHtml(s) {
     .replace(/'/g, "&#39;");
 }
 
+const LOGO_URL =
+  "https://media.base44.com/images/public/69ba8e801b8d893fdd14efd0/26ed85e1e_Logo-2025-03.png";
+
 export function renderOrderEmailHtml(order) {
   const items = (order.items || [])
     .map(
       (it) => `
         <tr>
-          <td style="padding:10px 12px;border-bottom:1px solid #eee;">
+          <td dir="rtl" style="padding:10px 12px;border-bottom:1px solid #eee;text-align:right;">
             <div style="font-weight:600;color:#111;">${escapeHtml(it.name || "")}</div>
-            <div style="font-size:12px;color:#666;margin-top:2px;">
-              ${it.size ? escapeHtml(it.size) + " · " : ""}${it.withStorage ? "כולל ארגז מצעים · " : ""}כמות: ${it.quantity}
+            <div dir="rtl" style="font-size:12px;color:#666;margin-top:2px;">
+              כמות: ${it.quantity}${it.size ? " · מידה: " + escapeHtml(it.size) : ""}${it.withStorage ? " · כולל ארגז מצעים" : ""}
             </div>
           </td>
           <td style="padding:10px 12px;border-bottom:1px solid #eee;text-align:left;white-space:nowrap;font-weight:600;color:#111;">
@@ -41,37 +44,40 @@ export function renderOrderEmailHtml(order) {
 <!doctype html>
 <html lang="he" dir="rtl">
   <head><meta charset="utf-8"></head>
-  <body style="margin:0;background:#faf6ef;font-family:Arial,sans-serif;color:#222;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf6ef;padding:32px 12px;">
+  <body style="margin:0;background:#faf6ef;font-family:Arial,sans-serif;color:#222;direction:rtl;" dir="rtl">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="rtl" style="background:#faf6ef;padding:32px 12px;direction:rtl;">
       <tr><td align="center">
-        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #eee;border-radius:14px;max-width:560px;width:100%;">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" dir="rtl" style="background:#fff;border:1px solid #eee;border-radius:14px;max-width:560px;width:100%;direction:rtl;">
           <tr>
-            <td style="padding:24px 28px;text-align:center;border-bottom:1px solid #eee;">
-              <div style="font-size:12px;letter-spacing:0.25em;color:#b8972a;text-transform:uppercase;">KING DAVID</div>
-              <h1 style="margin:8px 0 0;font-size:22px;color:#111;">תודה על ההזמנה!</h1>
-              <p style="margin:6px 0 0;color:#666;font-size:14px;">מספר הזמנה: <span style="font-family:monospace;color:#111;">${escapeHtml(order.orderNumber || "")}</span></p>
+            <td style="padding:28px;text-align:center;border-bottom:1px solid #eee;">
+              <img src="${LOGO_URL}" alt="King David" width="120" style="display:inline-block;max-width:140px;height:auto;margin:0 auto 14px;" />
+              <h1 style="margin:0;font-size:22px;color:#111;">תודה על ההזמנה!</h1>
+              <p dir="rtl" style="margin:6px 0 0;color:#666;font-size:14px;">
+                מספר הזמנה:
+                <span style="font-family:monospace;color:#111;" dir="ltr">${escapeHtml(order.orderNumber || "")}</span>
+              </p>
             </td>
           </tr>
 
           <tr>
             <td style="padding:20px 28px;">
-              <h2 style="margin:0 0 10px;font-size:14px;color:#111;">פריטים בהזמנה</h2>
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <h2 dir="rtl" style="margin:0 0 10px;font-size:14px;color:#111;text-align:right;">פריטים בהזמנה</h2>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="rtl" style="direction:rtl;">
                 ${items}
                 <tr>
-                  <td style="padding:10px 12px;color:#666;">סכום ביניים</td>
-                  <td style="padding:10px 12px;text-align:left;color:#666;">${money(order.subtotal)}</td>
+                  <td dir="rtl" style="padding:10px 12px;color:#666;text-align:right;">סכום ביניים</td>
+                  <td style="padding:10px 12px;text-align:left;color:#666;white-space:nowrap;">${money(order.subtotal)}</td>
                 </tr>
                 <tr>
-                  <td style="padding:4px 12px;color:#666;">משלוח</td>
-                  <td style="padding:4px 12px;text-align:left;color:#666;">${order.shipping ? money(order.shipping) : "חינם"}</td>
+                  <td dir="rtl" style="padding:4px 12px;color:#666;text-align:right;">משלוח</td>
+                  <td style="padding:4px 12px;text-align:left;color:#666;white-space:nowrap;">${order.shipping ? money(order.shipping) : "חינם"}</td>
                 </tr>
                 ${order.withAssembly
-                  ? `<tr><td style="padding:4px 12px;color:#666;">הרכבה</td><td style="padding:4px 12px;text-align:left;color:#666;">${money(order.assembly)}</td></tr>`
+                  ? `<tr><td dir="rtl" style="padding:4px 12px;color:#666;text-align:right;">הרכבה</td><td style="padding:4px 12px;text-align:left;color:#666;white-space:nowrap;">${money(order.assembly)}</td></tr>`
                   : ""}
                 <tr>
-                  <td style="padding:12px;border-top:2px solid #111;font-weight:700;color:#111;">סה"כ</td>
-                  <td style="padding:12px;border-top:2px solid #111;text-align:left;font-weight:700;color:#111;">${money(order.total)}</td>
+                  <td dir="rtl" style="padding:12px;border-top:2px solid #111;font-weight:700;color:#111;text-align:right;">סה"כ</td>
+                  <td style="padding:12px;border-top:2px solid #111;text-align:left;font-weight:700;color:#111;white-space:nowrap;">${money(order.total)}</td>
                 </tr>
               </table>
             </td>
@@ -79,15 +85,15 @@ export function renderOrderEmailHtml(order) {
 
           <tr>
             <td style="padding:0 28px 20px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #eee;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="rtl" style="border-top:1px solid #eee;direction:rtl;">
                 <tr>
-                  <td valign="top" style="padding:16px 0 0;width:50%;">
+                  <td valign="top" dir="rtl" style="padding:16px 0 0;width:50%;text-align:right;">
                     <h3 style="margin:0 0 6px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.1em;">פרטי התקשרות</h3>
                     <div style="color:#111;">${escapeHtml(order.customer?.fullName || "")}</div>
-                    <div dir="ltr" style="color:#444;">${escapeHtml(order.customer?.phone || "")}</div>
-                    <div dir="ltr" style="color:#444;">${escapeHtml(order.customer?.email || "")}</div>
+                    <div dir="ltr" style="color:#444;text-align:right;">${escapeHtml(order.customer?.phone || "")}</div>
+                    <div dir="ltr" style="color:#444;text-align:right;">${escapeHtml(order.customer?.email || "")}</div>
                   </td>
-                  <td valign="top" style="padding:16px 0 0;width:50%;">
+                  <td valign="top" dir="rtl" style="padding:16px 0 0;width:50%;text-align:right;">
                     <h3 style="margin:0 0 6px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.1em;">כתובת למשלוח</h3>
                     <div style="color:#111;">${escapeHtml(order.delivery?.address || "")}</div>
                     ${order.delivery?.apartment ? `<div style="color:#444;">דירה ${escapeHtml(order.delivery.apartment)}</div>` : ""}
@@ -99,7 +105,7 @@ export function renderOrderEmailHtml(order) {
           </tr>
 
           <tr>
-            <td style="padding:18px 28px;background:#faf6ef;text-align:center;border-top:1px solid #eee;border-radius:0 0 14px 14px;">
+            <td dir="rtl" style="padding:18px 28px;background:#faf6ef;text-align:center;border-top:1px solid #eee;border-radius:0 0 14px 14px;">
               <p style="margin:0;color:#666;font-size:12px;">נציג יצור איתכם קשר לאישור המשלוח וזמני ההגעה.</p>
             </td>
           </tr>
