@@ -187,13 +187,13 @@ export default function Checkout() {
 
               {/* Customer + delivery */}
               <section className="border-t border-primary/10 pt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div>
+                <div className="space-y-0.5">
                   <h3 className="text-xs font-semibold text-muted-foreground mb-1.5">פרטי התקשרות</h3>
                   <p className="text-foreground">{o.customer.fullName}</p>
-                  <p className="text-foreground/80" dir="ltr">{o.customer.phone}</p>
-                  <p className="text-foreground/80" dir="ltr">{o.customer.email}</p>
+                  <p className="text-foreground/80 text-right" dir="ltr" style={{ unicodeBidi: "plaintext" }}>{o.customer.phone}</p>
+                  <p className="text-foreground/80 text-right break-all" dir="ltr" style={{ unicodeBidi: "plaintext" }}>{o.customer.email}</p>
                 </div>
-                <div>
+                <div className="space-y-0.5">
                   <h3 className="text-xs font-semibold text-muted-foreground mb-1.5">כתובת למשלוח</h3>
                   <p className="text-foreground">{o.delivery.address}</p>
                   {o.delivery.apartment && (
