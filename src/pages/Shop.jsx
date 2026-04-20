@@ -28,7 +28,8 @@ const sizes = [
 export default function Shop() {
   const { category: urlCategory } = useParams();
   const queryCategory = new URLSearchParams(window.location.search).get("category");
-  const initialCategory = urlCategory || queryCategory || "הכל";
+  const rawCategory = urlCategory || queryCategory;
+  const initialCategory = rawCategory === "מזרנים" ? "מזרנים זוגיים" : (rawCategory || "הכל");
 
   const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [search, setSearch] = useState("");
