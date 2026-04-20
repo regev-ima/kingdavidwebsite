@@ -23,6 +23,8 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Reviews from './pages/Reviews';
 import Checkout from './pages/Checkout';
+import HypReturn from './pages/HypReturn';
+import HypMock from './pages/HypMock';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -63,6 +65,8 @@ const AuthenticatedApp = () => {
         <Route path="/Reviews" element={<Reviews />} />
         <Route path="/Checkout" element={<Checkout />} />
       </Route>
+      <Route path="/checkout/hyp-return" element={<HypReturn />} />
+      <Route path="/checkout/hyp-mock" element={<HypMock />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

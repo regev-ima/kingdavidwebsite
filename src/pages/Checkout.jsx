@@ -12,6 +12,8 @@ import { useCart } from "@/lib/CartContext";
 import { checkoutSchema } from "@/lib/validationSchemas";
 import OrderSummary from "@/components/shop/checkout/OrderSummary";
 import AddressAutocomplete from "@/components/shop/checkout/AddressAutocomplete";
+import HypPaymentModal from "@/components/shop/checkout/HypPaymentModal";
+import { buildHypIframeUrl, isHypConfigured } from "@/lib/hyp";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
@@ -33,9 +35,9 @@ const PAYMENT_METHODS = [
   {
     id: "credit",
     label: "כרטיס אשראי",
-    description: "תשלום מאובטח",
+    description: "תשלום מאובטח דרך Hyp",
     icon: CreditCard,
-    disabled: true,
+    disabled: false,
   },
 ];
 
@@ -51,6 +53,7 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState("phone");
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
+  const [hypIframeUrl, setHypIframeUrl] = useState(null);
 
   const {
     register,
@@ -126,9 +129,9 @@ export default function Checkout() {
             מספר הזמנה: <span className="font-mono text-foreground">{orderNumber}</span>
           </p>
           <p className="text-muted-foreground">
-            {paymentMethod === "phone"
-              ? "נציג יצור איתכם קשר בהקדם לסיום ההזמנה."
-              : "ההזמנה נשלחה בהצלחה דרך וואטסאפ."}
+            {paymentMethod === "phone" && "נציג יצור איתכם קשר בהקדם לסיום ההזמנה."}
+            {paymentMethod === "whatsapp" && "ההזמנה נשלחה בהצלחה דרך וואטסאפ."}
+            {paymentMethod === "credit" && "התשלום התקבל. אישור נשלח לאימייל שלך."}
           </p>
           <Button
             onClick={() => navigate("/Shop")}
@@ -234,12 +237,28 @@ export default function Checkout() {
     const num = generateOrderNumber();
     setOrderNumber(num);
 
+    await persistOrderToCRM(num, data);
+
     if (paymentMethod === "credit") {
-      toast({ title: "בקרוב", description: "תשלום בכרטיס אשראי יהיה זמין בקרוב" });
+      const url = buildHypIframeUrl({
+        orderNumber: num,
+        amount: orderTotal,
+        info: `הזמנה ${num}`,
+        customer: {
+          fullName: data.fullName,
+          email: data.email,
+          phone: data.phone,
+        },
+      });
+      if (!isHypConfigured()) {
+        toast({
+          title: "מצב הדמיה",
+          description: "Hyp terminal לא מוגדר — נפתח דף סליקה להדמיה בלבד.",
+        });
+      }
+      setHypIframeUrl(url);
       return;
     }
-
-    await persistOrderToCRM(num, data);
 
     if (paymentMethod === "whatsapp") {
       const msg = buildWhatsAppMessage(data);
@@ -248,6 +267,23 @@ export default function Checkout() {
 
     clearCart();
     setOrderComplete(true);
+  }
+
+  function handleHypSuccess() {
+    setHypIframeUrl(null);
+    clearCart();
+    setOrderComplete(true);
+  }
+
+  function handleHypFailure({ reason }) {
+    setHypIframeUrl(null);
+    toast({
+      title: "התשלום נכשל",
+      description: reason === "demo_declined"
+        ? "נדחה בהדמיה. נסה שוב או בחר אמצעי תשלום אחר."
+        : "העסקה לא אושרה. נסה שוב או בחר אמצעי תשלום אחר.",
+      variant: "destructive",
+    });
   }
 
   return (
@@ -417,6 +453,13 @@ export default function Checkout() {
           <OrderSummary collapsibleOnMobile={false} />
         </div>
       </div>
+
+      <HypPaymentModal
+        url={hypIframeUrl}
+        onSuccess={handleHypSuccess}
+        onFailure={handleHypFailure}
+        onClose={() => setHypIframeUrl(null)}
+      />
     </div>
   );
 }
