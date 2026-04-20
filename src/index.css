@@ -139,11 +139,10 @@
      Intentionally faint — a breath of colour, not a tint. */
   .light body {
     background:
-      radial-gradient(ellipse 40vw 30vh at 5% 8%,   hsla(28, 75%, 88%, 0.70) 0%, transparent 75%),
-      radial-gradient(ellipse 38vw 28vh at 95% 22%, hsla(8,  75%, 90%, 0.65) 0%, transparent 75%),
-      radial-gradient(ellipse 35vw 26vh at 50% 48%, hsla(42, 65%, 92%, 0.55) 0%, transparent 75%),
-      radial-gradient(ellipse 40vw 30vh at 3% 70%,  hsla(18, 75%, 90%, 0.65) 0%, transparent 75%),
-      radial-gradient(ellipse 38vw 28vh at 97% 85%, hsla(4,  75%, 91%, 0.60) 0%, transparent 75%),
+      radial-gradient(ellipse 28vw 22vh at 0% 5%,    hsla(28, 80%, 88%, 0.75) 0%, transparent 65%),
+      radial-gradient(ellipse 28vw 22vh at 100% 5%,  hsla(8,  80%, 90%, 0.70) 0%, transparent 65%),
+      radial-gradient(ellipse 28vw 22vh at 0% 95%,   hsla(18, 80%, 90%, 0.70) 0%, transparent 65%),
+      radial-gradient(ellipse 28vw 22vh at 100% 95%, hsla(4,  80%, 91%, 0.65) 0%, transparent 65%),
       hsl(var(--background));
     background-size: 100% 200vh;
     background-repeat: repeat;
