@@ -9,7 +9,7 @@ import MattressFinderBot from "./MattressFinderBot";
 export default function Layout() {
   const location = useLocation();
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1">
         {/* Re-mounted per route so each page gets an entrance animation.
