@@ -130,21 +130,21 @@
   }
 
   /* Ambient page atmosphere for the light theme — large blurred pastel
-     orbs (peach / cream / pink / gold) floating behind the content.
-     Fixed-attachment so the glow follows the viewport while scrolling,
-     giving every page the same dreamy warm feel as the brand reference. */
+     orbs (peach / cream / pink / gold) diffusing behind the content.
+     The orbs tile vertically every 150vh so the whole document stays
+     bathed in warm glow no matter how far you scroll — matches the
+     brand reference where the atmosphere repeats down the page.      */
   .light body {
     background:
-      radial-gradient(ellipse 60% 45% at 10% 5%,   hsla(32, 85%, 82%, 1) 0%, transparent 70%),
-      radial-gradient(ellipse 55% 42% at 90% 12%,  hsla(10, 85%, 85%, 1) 0%, transparent 70%),
-      radial-gradient(ellipse 50% 38% at 50% 30%,  hsla(45, 80%, 86%, 0.9) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 45% at 5% 55%,   hsla(20, 85%, 85%, 1) 0%, transparent 70%),
-      radial-gradient(ellipse 55% 42% at 95% 62%,  hsla(5,  80%, 87%, 0.95) 0%, transparent 70%),
-      radial-gradient(ellipse 55% 42% at 50% 80%,  hsla(38, 80%, 86%, 0.9) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 45% at 15% 102%, hsla(15, 85%, 86%, 1) 0%, transparent 70%),
-      radial-gradient(ellipse 50% 38% at 85% 105%, hsla(28, 80%, 87%, 0.95) 0%, transparent 70%),
+      radial-gradient(ellipse 55vw 45vh at 10% 8%,   hsla(32, 85%, 82%, 1)   0%, transparent 70%),
+      radial-gradient(ellipse 50vw 42vh at 90% 20%,  hsla(10, 85%, 85%, 1)   0%, transparent 70%),
+      radial-gradient(ellipse 45vw 40vh at 50% 38%,  hsla(45, 80%, 86%, 0.9) 0%, transparent 70%),
+      radial-gradient(ellipse 55vw 45vh at 8% 55%,   hsla(20, 85%, 85%, 1)   0%, transparent 70%),
+      radial-gradient(ellipse 50vw 42vh at 92% 72%,  hsla(5,  80%, 87%, 0.95) 0%, transparent 70%),
+      radial-gradient(ellipse 50vw 42vh at 50% 92%,  hsla(38, 80%, 86%, 0.9) 0%, transparent 70%),
       hsl(var(--background));
-    background-attachment: fixed;
+    background-size: 100% 150vh;
+    background-repeat: repeat;
   }
 
   /* Custom scrollbar */
