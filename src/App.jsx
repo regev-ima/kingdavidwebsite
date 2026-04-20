@@ -25,6 +25,7 @@ import Reviews from './pages/Reviews';
 import Checkout from './pages/Checkout';
 import HypReturn from './pages/HypReturn';
 import HypMock from './pages/HypMock';
+import EmailPreview from './pages/EmailPreview';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -67,6 +68,7 @@ const AuthenticatedApp = () => {
       </Route>
       <Route path="/checkout/hyp-return" element={<HypReturn />} />
       <Route path="/checkout/hyp-mock" element={<HypMock />} />
+      <Route path="/email-preview" element={<EmailPreview />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
