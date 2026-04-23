@@ -37,6 +37,7 @@ export default function Footer() {
                 { label: "אודות", path: "/About" },
                 { label: "שאלות ותשובות", path: "/FAQ" },
                 { label: "ביקורות", path: "/Reviews" },
+                { label: "בלוג", path: "/Blog" },
               ].map((link) => (
                 <Link
                   key={link.path}

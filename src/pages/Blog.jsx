@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,16 @@ export default function Blog() {
 
   return (
     <div className="min-h-screen">
+      <Helmet>
+        <title>הבלוג שלנו | קינג דיויד מזרנים</title>
+        <meta name="description" content="טיפים, מאמרים ומידע שימושי על עולם השינה, מזרנים אורטופדיים, מיטות נוער והיגיינת שינה — מהמומחים של קינג דיויד." />
+        <link rel="canonical" href="https://kingdavid4u.co.il/Blog" />
+        <meta property="og:title" content="הבלוג שלנו | קינג דיויד מזרנים" />
+        <meta property="og:description" content="טיפים, מאמרים ומידע שימושי על עולם השינה והמזרנים." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://kingdavid4u.co.il/Blog" />
+        <meta property="og:locale" content="he_IL" />
+      </Helmet>
       <div className="py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">הבלוג שלנו</h1>
