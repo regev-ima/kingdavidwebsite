@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import ReactMarkdown from "react-markdown";
+import DOMPurify from "dompurify";
 
 export default function BlogPostPage() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -21,6 +21,11 @@ export default function BlogPostPage() {
     },
     enabled: !!postId,
   });
+
+  const sanitizedContent = useMemo(
+    () => ({ __html: post?.content ? DOMPurify.sanitize(post.content) : "" }),
+    [post?.content],
+  );
 
   if (isLoading) {
     return (
@@ -74,9 +79,10 @@ export default function BlogPostPage() {
             </div>
           )}
 
-          <div className="prose prose-lg max-w-none text-foreground">
-            <ReactMarkdown>{post.content}</ReactMarkdown>
-          </div>
+          <div
+            className="prose prose-lg max-w-none text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-a:text-primary"
+            dangerouslySetInnerHTML={sanitizedContent}
+          />
         </div>
       </div>
     </div>

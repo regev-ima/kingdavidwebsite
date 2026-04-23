@@ -432,6 +432,55 @@ const leadEntity = {
   },
 };
 
+// Blog posts live in the CRM's public.blog_posts. Reads go through two
+// SECURITY DEFINER RPCs so the anon key never touches the table directly.
+// Frontend components expect `created_date`, so map `published_at` into it.
+function mapBlogRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    excerpt: row.excerpt,
+    content: row.content,
+    category: row.category,
+    image_url: row.image_url,
+    created_date: row.published_at,
+  };
+}
+
+const blogPostEntity = {
+  async list() {
+    if (!isSupabaseConfigured) return [];
+    const { data, error } = await supabase.rpc('website_list_blog_posts', { p_limit: 50 });
+    if (error) {
+      console.error('[base44Client shim] website_list_blog_posts failed:', error.message);
+      return [];
+    }
+    return (data || []).map(mapBlogRow);
+  },
+  async filter(filter) {
+    if (!isSupabaseConfigured) return [];
+    if (filter?.id) {
+      const { data, error } = await supabase.rpc('website_get_blog_post', { p_id: filter.id });
+      if (error) {
+        console.error('[base44Client shim] website_get_blog_post failed:', error.message);
+        return [];
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      return row ? [mapBlogRow(row)] : [];
+    }
+    return this.list();
+  },
+  async get(id) {
+    const rows = await this.filter({ id });
+    return rows[0] || null;
+  },
+  async create() {
+    throw new Error('[base44Client shim] BlogPost.create is disabled on the website — author posts in the CRM.');
+  },
+};
+
 const ENTITIES = {
   Product: productEntity,
   Order: orderEntity,
@@ -443,7 +492,7 @@ const ENTITIES = {
   // Route it through the same lead RPC so every "contact us" form
   // lands as a tagged lead in the CRM.
   ContactInquiry: leadEntity,
-  BlogPost: stubEntity('BlogPost'),
+  BlogPost: blogPostEntity,
 };
 
 const entities = new Proxy(
