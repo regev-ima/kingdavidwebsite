@@ -29,7 +29,8 @@ export default function Shop() {
   const { category: urlCategory } = useParams();
   const queryCategory = new URLSearchParams(window.location.search).get("category");
   const rawCategory = urlCategory || queryCategory;
-  const initialCategory = rawCategory === "מזרנים" ? "מזרנים זוגיים" : (rawCategory || "הכל");
+  const categoryAliases = { "מזרנים": "מזרנים זוגיים", "מיטות": "מיטות זוגיות" };
+  const initialCategory = categoryAliases[rawCategory] || rawCategory || "הכל";
 
   const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [search, setSearch] = useState("");
