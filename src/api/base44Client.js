@@ -470,6 +470,15 @@ const blogPostEntity = {
       const row = Array.isArray(data) ? data[0] : data;
       return row ? [mapBlogRow(row)] : [];
     }
+    if (filter?.slug) {
+      const { data, error } = await supabase.rpc('website_get_blog_post_by_slug', { p_slug: filter.slug });
+      if (error) {
+        console.error('[base44Client shim] website_get_blog_post_by_slug failed:', error.message);
+        return [];
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      return row ? [mapBlogRow(row)] : [];
+    }
     return this.list();
   },
   async get(id) {

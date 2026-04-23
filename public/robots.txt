@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /Checkout
+Disallow: /checkout/
+Disallow: /email-preview
+
+Sitemap: https://kingdavid4u.co.il/sitemap.xml

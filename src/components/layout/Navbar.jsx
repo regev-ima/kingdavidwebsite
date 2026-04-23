@@ -17,6 +17,7 @@ const navLinks = [
   { label: "מבצעים", path: "/Shop/מבצעים" },
   { label: "שאלות ותשובות", path: "/FAQ" },
   { label: "ביקורות", path: "/Reviews" },
+  { label: "בלוג", path: "/Blog" },
   { label: "צור קשר", path: "/Contact" },
 ];
 
