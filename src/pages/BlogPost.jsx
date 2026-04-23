@@ -302,11 +302,13 @@ export default function BlogPostPage() {
         </div>
       )}
 
-      {/* Article body — no card, prose-wide */}
-      <div
-        className="max-w-3xl mx-auto px-4 sm:px-6 prose prose-lg md:prose-xl max-w-none prose-headings:text-foreground prose-headings:font-bold prose-strong:text-foreground prose-a:text-primary prose-a:font-medium prose-img:rounded-2xl text-foreground/90 leading-relaxed"
-        dangerouslySetInnerHTML={sanitizedContent}
-      />
+      {/* Article body — no card, constrained prose width */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <div
+          className="prose prose-lg md:prose-xl max-w-none prose-headings:text-foreground prose-headings:font-bold prose-strong:text-foreground prose-a:text-primary prose-a:font-medium prose-img:rounded-2xl prose-img:w-full prose-img:mx-auto text-foreground/90 leading-relaxed blog-content"
+          dangerouslySetInnerHTML={sanitizedContent}
+        />
+      </div>
 
       {/* Share + back */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-12 md:mt-16 flex flex-wrap items-center justify-between gap-4 pb-10 border-b border-border/40">

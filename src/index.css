@@ -161,6 +161,41 @@
 }
 
 @layer components {
+  /* Blog post content — tame WordPress exports */
+  .blog-content :where(img, figure, iframe) {
+    max-width: 100%;
+    height: auto;
+    margin-inline: auto;
+  }
+  .blog-content figure {
+    margin-block: 2rem;
+  }
+  .blog-content figure > img {
+    display: block;
+    width: 100%;
+    border-radius: 1rem;
+  }
+  .blog-content figcaption {
+    text-align: center;
+    font-size: 0.875rem;
+    color: hsl(var(--muted-foreground));
+    margin-top: 0.5rem;
+  }
+  .blog-content .wp-block-image,
+  .blog-content .aligncenter,
+  .blog-content .alignleft,
+  .blog-content .alignright {
+    margin-inline: auto;
+    float: none;
+    display: block;
+  }
+  /* Kill any WP fixed-width <img width="2000"> attributes */
+  .blog-content img[width],
+  .blog-content img[height] {
+    width: 100% !important;
+    height: auto !important;
+  }
+
   /* Royal card */
   .royal-card {
     background: hsl(225 15% 8%);
