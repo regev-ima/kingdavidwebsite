@@ -472,12 +472,16 @@ const blogPostEntity = {
     }
     if (filter?.slug) {
       const { data, error } = await supabase.rpc('website_get_blog_post_by_slug', { p_slug: filter.slug });
-      if (error) {
-        console.error('[base44Client shim] website_get_blog_post_by_slug failed:', error.message);
-        return [];
+      if (!error) {
+        const row = Array.isArray(data) ? data[0] : data;
+        return row ? [mapBlogRow(row)] : [];
       }
-      const row = Array.isArray(data) ? data[0] : data;
-      return row ? [mapBlogRow(row)] : [];
+      // Fallback path: if the slug RPC isn't deployed yet, resolve the slug
+      // client-side against the full list so /blog/:slug keeps working.
+      console.warn('[base44Client shim] website_get_blog_post_by_slug unavailable, falling back to list lookup:', error.message);
+      const all = await this.list();
+      const match = all.find((p) => p.slug === filter.slug);
+      return match ? [match] : [];
     }
     return this.list();
   },
