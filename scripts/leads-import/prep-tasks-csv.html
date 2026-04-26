@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>הכנת CSV משימות לייבוא</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; max-width: 760px; margin: 30px auto; padding: 16px; background: #fafafa; color: #1a1a1a; }
+  h1 { font-size: 22px; margin-bottom: 8px; }
+  p { line-height: 1.6; color: #444; }
+  .drop {
+    border: 2px dashed #999; border-radius: 12px; padding: 30px 20px; text-align: center;
+    background: white; margin: 16px 0; cursor: pointer;
+  }
+  .drop.over { border-color: #c9a45a; background: #fff8eb; }
+  input[type=file] { display: none; }
+  button {
+    padding: 10px 18px; border: 0; border-radius: 8px;
+    background: #c9a45a; color: white; font-weight: 600; font-size: 14px; cursor: pointer;
+  }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  pre { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 12px; max-height: 200px; overflow: auto; direction: ltr; text-align: left; }
+  .ok { color: #2c7a3a; font-weight: 600; }
+  .warn { color: #b3801b; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 8px 0; }
+  td, th { border: 1px solid #e0e0e0; padding: 4px 8px; text-align: right; }
+  th { background: #f4f4f4; }
+</style>
+</head>
+<body>
+<h1>הכנת CSV משימות לייבוא</h1>
+<p>מקבל את ה‑CSV/TSV הגולמי של המשימות ממערכת ה‑CRM הישנה, בוחר רק את 9 העמודות שצריך, נותן להן שמות באנגלית שתואמים ל‑staging, ומוריד CSV מסודר.</p>
+
+<label class="drop" id="drop">
+  <strong>בחר קובץ CSV/TSV</strong><br>
+  <small>או גרור אותו לכאן</small>
+  <input id="picker" type="file" accept=".csv,.tsv,.txt" />
+</label>
+
+<div id="status"></div>
+<div id="preview"></div>
+
+<button id="run" disabled>הורד CSV מסודר</button>
+
+<pre id="log"></pre>
+
+<script>
+const COLUMN_MAP = {
+  'תאריך יצירה':       'raw_created_date',
+  'תאריך תחילת עבודה': 'raw_work_start_date',
+  'מנהל תיק':          'raw_account_manager',
+  'סטטוס כרטיס':       'raw_card_status',
+  'סטטוס משימה':       'raw_task_status',
+  'טלפון ראשי':        'raw_phone',
+  'משימה - ליד':       'raw_task_name',
+  'שם לקוח':           'raw_customer_name',
+  'תוכן משימה':        'raw_summary',
+};
+
+const drop = document.getElementById('drop');
+const picker = document.getElementById('picker');
+const runBtn = document.getElementById('run');
+const status = document.getElementById('status');
+const preview = document.getElementById('preview');
+const log = document.getElementById('log');
+
+let parsed = null;
+
+picker.addEventListener('change', (e) => loadFile(e.target.files[0]));
+drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); loadFile(e.dataTransfer.files[0]); });
+
+function detectDelimiter(line) {
+  const tabs = (line.match(/\t/g) || []).length;
+  const commas = (line.match(/,/g) || []).length;
+  return tabs > commas ? '\t' : ',';
+}
+
+function parseLine(line, delim) {
+  const out = [];
+  let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else cur += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === delim) { out.push(cur); cur = ''; }
+      else cur += c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+async function loadFile(file) {
+  if (!file) return;
+  status.innerHTML = `<p>קורא ${file.name} (${(file.size/1024/1024).toFixed(1)}MB)...</p>`;
+  let text = await file.text();
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const allLines = text.split(/\r?\n/);
+  const headerLine = allLines[0];
+  const delim = detectDelimiter(headerLine);
+  const headers = parseLine(headerLine, delim).map((h) => h.trim());
+  const mapping = {};
+  const missing = [];
+  for (const [csvName, outName] of Object.entries(COLUMN_MAP)) {
+    const idx = headers.indexOf(csvName);
+    if (idx === -1) missing.push(csvName);
+    else mapping[outName] = idx;
+  }
+  parsed = { delim, allLines, mapping };
+
+  const t = ['<table><tr><th>עמודה ב‑staging</th><th>במקור</th><th>נמצאה?</th></tr>'];
+  for (const [csvName, outName] of Object.entries(COLUMN_MAP)) {
+    t.push(`<tr><td><code>${outName}</code></td><td>${csvName}</td><td>${mapping[outName] !== undefined ? '✅' : '<span class="warn">❌</span>'}</td></tr>`);
+  }
+  t.push('</table>');
+  preview.innerHTML = t.join('');
+  status.innerHTML = `<p>נמצאו <strong>${allLines.length - 1}</strong> שורות (${delim === '\t' ? 'tab' : 'comma'} מפריד).</p>`;
+  if (missing.length) status.innerHTML += `<p class="warn">חסרות עמודות: ${missing.join(', ')}</p>`;
+  runBtn.disabled = false;
+}
+
+function csvField(v) {
+  if (v == null) return '';
+  const s = String(v);
+  if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+runBtn.addEventListener('click', () => {
+  if (!parsed) return;
+  runBtn.disabled = true;
+  log.textContent = '';
+  const outCols = Object.values(COLUMN_MAP);
+  const out = [outCols.join(',')];
+  let kept = 0, skipped = 0;
+  for (let i = 1; i < parsed.allLines.length; i++) {
+    const line = parsed.allLines[i];
+    if (!line || !line.trim()) { skipped++; continue; }
+    const cells = parseLine(line, parsed.delim);
+    const row = outCols.map((col) => {
+      const idx = parsed.mapping[col];
+      return idx === undefined ? '' : csvField(cells[idx] || '');
+    });
+    out.push(row.join(','));
+    kept++;
+  }
+  const blob = new Blob(['﻿', out.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sales_tasks_import_clean.csv';
+  a.click();
+  status.innerHTML = `<p class="ok">בוצע!</p><p>הורד <code>sales_tasks_import_clean.csv</code> עם ${kept} שורות. עכשיו ב‑Supabase Table Editor → <code>sales_tasks_import</code> → Import data via CSV.</p>`;
+  runBtn.disabled = false;
+});
+</script>
+</body>
+</html>
