@@ -13,7 +13,7 @@
 -- ============================================================
 DO $$
 DECLARE
-  base text := 'https://YOUR_PROJECT_REF.supabase.co/storage/v1/object/public/product-images';
+  base text := 'https://njfrqbzkwwalwpzzxecy.supabase.co/storage/v1/object/public/product-images';
 BEGIN
 
 UPDATE public.products SET
