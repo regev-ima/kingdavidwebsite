@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>בחירת תמונה ראשית למוצרים</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; max-width: 1100px; margin: 24px auto; padding: 16px; background: #fafafa; color: #1a1a1a; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  p.lead { color: #555; margin-top: 0; }
+  .controls { display: flex; gap: 10px; align-items: center; margin: 16px 0; flex-wrap: wrap; padding: 12px; background: white; border-radius: 8px; border: 1px solid #ddd; }
+  input[type=file] { font-size: 14px; }
+  button {
+    padding: 10px 18px; border: 0; border-radius: 8px;
+    background: #c9a45a; color: white; font-weight: 600; font-size: 14px;
+    cursor: pointer;
+  }
+  button.ghost { background: white; color: #333; border: 1px solid #ccc; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  .product { background: white; border: 1px solid #e0e0e0; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .product header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .product header h3 { margin: 0; font-size: 15px; color: #333; font-weight: 600; }
+  .product header small { color: #888; }
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+  .thumb {
+    border: 3px solid transparent;
+    border-radius: 8px;
+    background: #f5f5f5;
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    transition: border-color .15s;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: contain; background: white; }
+  .thumb:hover { border-color: #c9a45a55; }
+  .thumb.selected { border-color: #c9a45a; box-shadow: 0 0 0 2px #c9a45a33; }
+  .thumb .label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.7); color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+  .thumb.selected .label { background: #c9a45a; }
+  textarea { width: 100%; min-height: 200px; font-family: monospace; font-size: 12px; padding: 10px; direction: ltr; text-align: left; }
+  details { margin-top: 16px; }
+  summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+</style>
+</head>
+<body>
+<h1>בחירת תמונה ראשית למוצרים</h1>
+<p class="lead">לחץ על הזווית שתהיה התמונה הראשית (cover) בכל מוצר. בסיום לחץ "ייצא SQL" → העתק והדבק ב‑Supabase SQL Editor.</p>
+
+<div class="controls">
+  <label>טען <code>mapping.json</code>: <input id="picker" type="file" accept="application/json" /></label>
+  <button id="export" disabled>ייצא SQL</button>
+</div>
+
+<div id="products"></div>
+
+<details id="output" style="display:none">
+  <summary>SQL מוכן (העתק והדבק ב‑Supabase SQL Editor)</summary>
+  <textarea id="sql" readonly></textarea>
+</details>
+
+<script>
+const SUPABASE = 'https://njfrqbzkwwalwpzzxecy.supabase.co/storage/v1/object/public/product-images';
+
+// folder slug -> Hebrew name LIKE expression for matching products
+// (mirrors supabase/migrations/018_product_images.sql)
+const NAME_LIKE = {
+  'Carbon-Pro-X7':              'Carbon Pro X7%',
+  '3M-COMFORT':                 '3M קומפורט%',
+  'Ultimate':                   'אולטימייט%',
+  'Euphoria-XLV':               'אופוריה%',
+  'Orto-Teva-Filotop':          'אורטו טבע%',
+  'Orto-Medical':               'אורטו מדיקל%',
+  'Orthopedic-Anatomy':         'אנטומי אורטופדי לטקס (%',
+  'Anatomy-Latex-Pilotop':      'אנטומי אורטופדי לטקס פילוטופ%',
+  'Impact':                     'אימפקט%',
+  'Inter-Medic-Visco-Pilotop':  'אינטר מדיק%',
+  'Inspire':                    'אינספייר%',
+  'Elegance-Residance':         'אלגנס רזידנס%',
+  'Elastic-Medic':              'אלסטיק מדיק בד%',
+  'Elastic-Medic-Filotop':      'אלסטיק מדיק פילו%',
+  '_-Energy':                   "אנרג'י (%",
+  '_-Energy-Pilotop':           "אנרג'י פילוטופ%",
+  'Excellent-King':             'אקסלנט קינג%',
+  'Harmony':                    'הרמוני%',
+  'Visco-Deluxe':               'ויסקו דה לקס%',
+  'Visco-Deluxe-Filotop':       'ויסקו דלקס%',
+  'Visco-Medic-Filotop':        'ויסקו מדיק%',
+  'Cashmere-Visco':             'קשמיר ויסקו%',
+  'Triple-Balance':             'טריפל בלאנס%',
+  'LEDER':                      'לידר%',
+  'DK':                         'נטורל ספא דאבל קדר%',
+  'Natural-Spa-Filotop':        'נטורל ספא פילוטופ%',
+  'Natural-Therapy':            'נטורל תראפי%',
+  'Night-Therapy':              'נייט תראפי%',
+  'Silver-Pocket':              'סילבר%',
+  'Space-Pilotop':              'ספייס פילוטופ%',
+  'Premier-Multi-Visco':        'מולטי ויסקו פרימייר%',
+  'Perfection':                 'פרפקשיין%',
+  'K':                          'קוואטרו K%',
+  'S':                          'קוואטרו מולטי ויסקו%S%',
+  'Relax-Therapy-Visco':        'רילקס%',
+};
+
+const productsEl = document.getElementById('products');
+const exportBtn = document.getElementById('export');
+const outputBox = document.getElementById('output');
+const sqlBox    = document.getElementById('sql');
+
+let mapping = null;
+const selection = {}; // slug -> chosen index (1-based)
+
+document.getElementById('picker').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  try {
+    mapping = JSON.parse(text);
+  } catch {
+    alert('mapping.json לא תקין');
+    return;
+  }
+  render();
+});
+
+function render() {
+  productsEl.innerHTML = '';
+  const slugs = Object.keys(mapping).filter((s) => NAME_LIKE[s]);
+  for (const slug of slugs) {
+    const m = mapping[slug];
+    const count = m.files.length;
+    const heb = m.drive_folder;
+    selection[slug] = selection[slug] || 1;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'product';
+    wrap.innerHTML = `
+      <header>
+        <h3>${heb}</h3>
+        <small>${slug}</small>
+      </header>
+      <div class="thumbs"></div>
+    `;
+    const thumbs = wrap.querySelector('.thumbs');
+    for (let i = 1; i <= count; i++) {
+      const url = `${SUPABASE}/${slug}/${i}.jpg`;
+      const t = document.createElement('div');
+      t.className = 'thumb' + (selection[slug] === i ? ' selected' : '');
+      t.innerHTML = `<img src="${url}" alt="${i}" loading="lazy"/><span class="label">${i === selection[slug] ? '★ ראשי' : i}</span>`;
+      t.addEventListener('click', () => {
+        selection[slug] = i;
+        // Re-render this product card.
+        thumbs.querySelectorAll('.thumb').forEach((el, idx) => {
+          el.classList.toggle('selected', idx + 1 === i);
+          el.querySelector('.label').textContent = idx + 1 === i ? '★ ראשי' : String(idx + 1);
+        });
+      });
+      thumbs.appendChild(t);
+    }
+    productsEl.appendChild(wrap);
+  }
+  exportBtn.disabled = slugs.length === 0;
+}
+
+exportBtn.addEventListener('click', () => {
+  const lines = [];
+  lines.push("-- Generated by pick-cover-tool.html — sets each product's image_url");
+  lines.push('-- to the chosen "cover" file, and reorders the images array so the');
+  lines.push('-- cover is first. Run in Supabase SQL Editor.');
+  lines.push('');
+  lines.push('DO $$');
+  lines.push('DECLARE');
+  lines.push(`  base text := '${SUPABASE}';`);
+  lines.push('BEGIN');
+  lines.push('');
+
+  for (const [slug, m] of Object.entries(mapping)) {
+    if (!NAME_LIKE[slug]) continue;
+    const cover = selection[slug] || 1;
+    const count = m.files.length;
+    // Build images array: cover first, then the rest in their original order
+    const order = [cover];
+    for (let i = 1; i <= count; i++) if (i !== cover) order.push(i);
+    const arr = order.map((n) => `base||'/${slug}/${n}.jpg'`).join(', ');
+    const like = NAME_LIKE[slug].replace(/'/g, "''");
+    lines.push(`UPDATE public.products SET`);
+    lines.push(`  image_url = base || '/${slug}/${cover}.jpg',`);
+    lines.push(`  images    = ARRAY[${arr}]`);
+    lines.push(`WHERE name LIKE '${like}';`);
+    lines.push('');
+  }
+
+  lines.push('END $$;');
+
+  sqlBox.value = lines.join('\n');
+  outputBox.style.display = 'block';
+  outputBox.open = true;
+  sqlBox.select();
+});
+</script>
+</body>
+</html>
