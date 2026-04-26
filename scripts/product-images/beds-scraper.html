@@ -1,0 +1,127 @@
+<!--
+  Run this entire JS block in the BROWSER CONSOLE while on kingdavid4u.co.il:
+
+  1. Navigate to https://kingdavid4u.co.il (any page).
+  2. Open DevTools — F12 (Windows) or Cmd+Option+I (Mac).
+  3. Click the "Console" tab.
+  4. Copy & paste the entire <script> contents below into the console and press Enter.
+  5. Wait — it'll fetch each product page, extract images, and download
+     a single ZIP called beds-images.zip.
+
+  Same-origin so no CORS issues. JSZip loaded from CDN at runtime.
+  Saved here as an HTML so it can be opened locally if needed; the
+  important part is the inner <script>.
+-->
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>Beds image scraper — paste in console</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; max-width: 760px; margin: 30px auto; padding: 16px; }
+  pre { background: #1e1e1e; color: #f5f5f5; padding: 16px; border-radius: 8px; direction: ltr; text-align: left; font-size: 12px; max-height: 70vh; overflow: auto; white-space: pre; }
+  ol { line-height: 1.8; }
+  code { background: #eee; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>Beds image scraper</h1>
+<ol>
+  <li>פתח <a href="https://kingdavid4u.co.il" target="_blank">kingdavid4u.co.il</a> בלשונית חדשה.</li>
+  <li>פתח DevTools — <code>F12</code> או <code>Cmd+Option+I</code>.</li>
+  <li>עבור לכרטיסיית <code>Console</code>.</li>
+  <li>העתק את כל הקוד למטה והדבק ב‑Console → Enter.</li>
+  <li>חכה — הוא ירוץ על 16 העמודות, ימשוך תמונות, ויוריד אליך <code>beds-images.zip</code>.</li>
+</ol>
+
+<pre id="snippet"></pre>
+
+<script>
+const SCRIPT = `(async function () {
+  const PRODUCTS = [
+    { slug: "yahalom",        url: "https://kingdavid4u.co.il/product/%d7%9e%d7%99%d7%98%d7%94-%d7%96%d7%95%d7%92%d7%99%d7%aa-%d7%9e%d7%93%d7%92%d7%9d-%d7%99%d7%94%d7%9c%d7%95%d7%9d/" },
+    { slug: "armitrage",      url: "https://kingdavid4u.co.il/product/%d7%9e%d7%99%d7%98%d7%94-%d7%96%d7%95%d7%92%d7%99%d7%aa-%d7%90%d7%a8%d7%9e%d7%99%d7%98%d7%a8%d7%92/" },
+    { slug: "cube",           url: "https://kingdavid4u.co.il/product/%d7%9e%d7%99%d7%98%d7%94-%d7%96%d7%95%d7%92%d7%99%d7%aa-cube-2/" },
+    { slug: "kd",             url: "https://kingdavid4u.co.il/product/%d7%9e%d7%99%d7%98%d7%94-%d7%96%d7%95%d7%92%d7%99%d7%aa-kd/" },
+    { slug: "queens",         url: "https://kingdavid4u.co.il/product/%d7%9e%d7%99%d7%98%d7%94-%d7%96%d7%95%d7%92%d7%99%d7%aa-queens-2/" },
+    { slug: "boxes",          url: "https://kingdavid4u.co.il/product/boxes/" },
+    { slug: "buttons",        url: "https://kingdavid4u.co.il/product/buttons/" },
+    { slug: "caprice",        url: "https://kingdavid4u.co.il/product/caprice/" },
+    { slug: "colini",         url: "https://kingdavid4u.co.il/product/colini/" },
+    { slug: "eden",           url: "https://kingdavid4u.co.il/product/eden/" },
+    { slug: "gallery-double", url: "https://kingdavid4u.co.il/product/gallery-double/" },
+    { slug: "gallery-judaic", url: "https://kingdavid4u.co.il/product/gallery/" },
+    { slug: "lips",           url: "https://kingdavid4u.co.il/product/lips/" },
+    { slug: "seychelles",     url: "https://kingdavid4u.co.il/product/seychelles/" },
+    { slug: "wings",          url: "https://kingdavid4u.co.il/product/wings/" },
+    { slug: "pilotop",        url: "https://kingdavid4u.co.il/product/%d7%9e%d7%96%d7%a8%d7%9f-%d7%96%d7%95%d7%92%d7%99-%d7%93%d7%92%d7%9d-%d7%90%d7%a0%d7%98%d7%95%d7%9e%d7%99-%d7%90%d7%95%d7%a8%d7%98%d7%95%d7%a4%d7%93%d7%99-%d7%a4%d7%99%d7%9c%d7%95%d7%98%d7%95%d7%a4/" },
+  ];
+
+  // Load JSZip from CDN at runtime.
+  if (!window.JSZip) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  const zip = new JSZip();
+  const summary = [];
+
+  function imageUrls(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    // WooCommerce product galleries usually have <a href="...full-size.jpg"> wrapping <img>.
+    // Collect both: full-size links and inline <img> in the gallery.
+    const urls = new Set();
+    doc.querySelectorAll('.woocommerce-product-gallery a[href], .product-gallery a[href], a[href*="/wp-content/uploads/"]').forEach((a) => {
+      const href = a.getAttribute('href');
+      if (href && /\\.(jpe?g|png|webp|gif)(\\?|$)/i.test(href)) urls.add(href);
+    });
+    doc.querySelectorAll('.woocommerce-product-gallery img, .product-gallery img, img[src*="/wp-content/uploads/"]').forEach((img) => {
+      const src = img.getAttribute('data-large_image') || img.getAttribute('data-src') || img.getAttribute('src');
+      if (src && /\\.(jpe?g|png|webp|gif)(\\?|$)/i.test(src)) urls.add(src);
+    });
+    // Strip srcset suffixes if any leaked through.
+    return Array.from(urls).map((u) => u.split(' ')[0]).filter(Boolean);
+  }
+
+  for (const p of PRODUCTS) {
+    try {
+      console.log('[scraper] fetching', p.slug);
+      const html = await fetch(p.url, { credentials: 'omit' }).then((r) => r.text());
+      const urls = imageUrls(html);
+      let i = 1;
+      for (const u of urls) {
+        try {
+          const blob = await fetch(u, { credentials: 'omit' }).then((r) => r.blob());
+          const extMatch = u.match(/\\.(jpe?g|png|webp|gif)(?:\\?|$)/i);
+          const ext = (extMatch ? extMatch[1] : 'jpg').toLowerCase().replace('jpeg', 'jpg');
+          zip.file(\`\${p.slug}/\${i}.\${ext}\`, blob);
+          i++;
+        } catch (e) {
+          console.warn('  skip', u, e.message);
+        }
+      }
+      summary.push({ slug: p.slug, found: urls.length, saved: i - 1 });
+      console.log(\`  \${p.slug}: \${i - 1} images\`);
+    } catch (e) {
+      console.error(\`[scraper] \${p.slug} failed:\`, e);
+      summary.push({ slug: p.slug, error: e.message });
+    }
+  }
+
+  console.table(summary);
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'beds-images.zip';
+  a.click();
+  console.log('[scraper] ZIP downloaded.');
+})();`;
+document.getElementById('snippet').textContent = SCRIPT;
+</script>
+</body>
+</html>
