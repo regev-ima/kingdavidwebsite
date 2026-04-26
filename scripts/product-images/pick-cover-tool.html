@@ -52,10 +52,15 @@
 
 <div id="products"></div>
 
-<details id="output" style="display:none">
-  <summary>SQL מוכן (העתק והדבק ב‑Supabase SQL Editor)</summary>
+<div id="output" style="display:none; margin-top: 24px;">
+  <h3 style="margin: 0 0 8px;">SQL מוכן</h3>
+  <p style="margin: 4px 0; color: #555;">העתק והדבק ב‑Supabase SQL Editor.</p>
+  <div style="display: flex; gap: 8px; margin: 8px 0;">
+    <button id="copy" type="button">העתק ללוח</button>
+    <span id="copyStatus" style="line-height: 36px; color: #2c7a3a;"></span>
+  </div>
   <textarea id="sql" readonly></textarea>
-</details>
+</div>
 
 <script>
 const SUPABASE = 'https://njfrqbzkwwalwpzzxecy.supabase.co/storage/v1/object/public/product-images';
@@ -192,8 +197,20 @@ exportBtn.addEventListener('click', () => {
 
   sqlBox.value = lines.join('\n');
   outputBox.style.display = 'block';
-  outputBox.open = true;
-  sqlBox.select();
+  outputBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => sqlBox.select(), 200);
+});
+
+document.getElementById('copy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(sqlBox.value);
+    document.getElementById('copyStatus').textContent = 'הועתק!';
+    setTimeout(() => { document.getElementById('copyStatus').textContent = ''; }, 2000);
+  } catch {
+    sqlBox.select();
+    document.execCommand('copy');
+    document.getElementById('copyStatus').textContent = 'הועתק!';
+  }
 });
 </script>
 </body>
