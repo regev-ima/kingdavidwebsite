@@ -140,8 +140,8 @@ UPDATE public.products SET
 WHERE name LIKE 'טריפל בלאנס%';
 
 UPDATE public.products SET
-  image_url = base || '/LEDER/1.png',
-  images    = ARRAY[base||'/LEDER/1.png', base||'/LEDER/2.png', base||'/LEDER/3.png', base||'/LEDER/4.png', base||'/LEDER/5.png']
+  image_url = base || '/LEDER/1.jpg',
+  images    = ARRAY[base||'/LEDER/1.jpg', base||'/LEDER/2.jpg', base||'/LEDER/3.jpg', base||'/LEDER/4.jpg', base||'/LEDER/5.jpg']
 WHERE name LIKE 'לידר%';
 
 UPDATE public.products SET
