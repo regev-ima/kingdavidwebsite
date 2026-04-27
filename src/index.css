@@ -114,10 +114,24 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
   body {
     @apply bg-background text-foreground font-sans-hebrew;
     direction: rtl;
     overflow-x: hidden;
+    max-width: 100%;
+    position: relative;
+  }
+
+  /* Prevent inner horizontal scrollers (carousels, filter rows) from
+     bleeding swipe gestures up to the page on iOS. */
+  .no-scrollbar,
+  .scrollbar-hidden {
+    overscroll-behavior-x: contain;
   }
 
   /* In light theme, keep decorative logos/crowns rendered in their

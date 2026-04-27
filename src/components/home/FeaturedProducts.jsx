@@ -49,7 +49,7 @@ export default function FeaturedProducts() {
   const doubled = [...products, ...products];
 
   return (
-    <section className="py-24 md:py-32">
+    <section className="py-24 md:py-32 overflow-hidden">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
         {/* Header with ornament */}
         <div className="text-center mb-14">
@@ -72,8 +72,7 @@ export default function FeaturedProducts() {
               <Link
                 key={`${product.id}-${i}`}
                 to={`/ProductDetail?id=${product.id}`}
-                className="group block shrink-0"
-                style={{ width: "calc((100vw - 80px) / 4)", maxWidth: "380px", minWidth: "220px" }}
+                className="group block shrink-0 w-[220px] sm:w-[260px] md:w-[300px] lg:w-[340px] xl:w-[380px]"
               >
                 <div className="royal-card rounded-lg overflow-hidden h-full">
                   <div className="relative aspect-square overflow-hidden">
