@@ -119,12 +119,8 @@ export default function TestimonialsSection() {
             style={{ scrollbarWidth: "none", msOverflowStyle: "none", direction: "rtl" }}
           >
             {reviews.map((review, i) => (
-              <motion.div
+              <div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
-                viewport={{ once: true }}
                 className="shrink-0 w-[280px] sm:w-[300px]"
               >
                 <div className="royal-card rounded-lg p-6 mb-3 relative">
@@ -149,7 +145,7 @@ export default function TestimonialsSection() {
                   </div>
                   <GoogleIcon />
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
