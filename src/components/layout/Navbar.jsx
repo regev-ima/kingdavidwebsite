@@ -14,7 +14,6 @@ const navLinks = [
   { label: "אודות", path: "/About" },
   { label: "מזרנים", path: "/Shop/מזרנים", megaMenu: "מזרנים" },
   { label: "מיטות", path: "/Shop/מיטות", megaMenu: "מיטות" },
-  { label: "מוצרים נלווים", path: "/Shop/מוצרים נלווים" },
   { label: "מבצעים", path: "/Shop/מבצעים" },
   { label: "שאלות ותשובות", path: "/FAQ" },
   { label: "ביקורות", path: "/Reviews" },
