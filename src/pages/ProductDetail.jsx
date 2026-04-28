@@ -184,13 +184,28 @@ export default function ProductDetail() {
 
   const DEFAULT_SIZES = ["80×190", "90×190", "100×190", "120×190", "140×190", "160×190", "180×190", "200×200"];
 
+  // True iff at least one variation has any physical dimension. Accessory
+  // products (pillows, mattress protectors, etc.) leave length/width/height
+  // null on every variation — for those we hide the "size" selector entirely
+  // and rely on the implicit default variation.
+  const hasAnyDimension = useMemo(() => {
+    const vars = product?.variations || [];
+    if (vars.length > 0) {
+      return vars.some(
+        (v) => v.length_cm != null || v.width_cm != null || v.height_cm != null
+      );
+    }
+    return (product?.available_sizes || []).some((s) => /\d/.test(String(s)));
+  }, [product]);
+
   const availableSizes = product?.available_sizes?.length > 0 ? product.available_sizes : DEFAULT_SIZES;
 
   useEffect(() => {
+    if (!hasAnyDimension) return;
     if (!selectedSize && availableSizes.length > 0) {
       setSelectedSize(availableSizes[0]);
     }
-  }, [product, selectedSize, availableSizes]);
+  }, [product, selectedSize, availableSizes, hasAnyDimension]);
 
   // Pre-warm weserv + browser cache for every gallery image as soon as
   // we know the URLs — the CRM uploads tend to be large PNGs, so the
@@ -627,22 +642,27 @@ export default function ProductDetail() {
             {/* Legacy "ארגז מצעים" toggle replaced by the full Addons list
                 below (fed from the CRM's product_addons table). */}
 
-            {/* Size + Quantity in one row */}
+            {/* Size + Quantity in one row. Size selector is hidden for
+                products whose variations have no physical dimensions
+                (e.g. accessories) — the cart still resolves to the
+                product's default variation. */}
             <div className="flex items-center gap-4 mb-6">
-              <div className="flex items-center gap-2 flex-1">
-                <label className="text-sm font-medium text-foreground/80 shrink-0">מידה</label>
-                <select
-                  value={selectedSize}
-                  onChange={e => setSelectedSize(e.target.value)}
-                  className="flex-1 h-11 rounded-xl border border-white/[0.08] text-foreground text-sm px-3 focus:outline-none focus:border-primary/50"
-                  style={{ background: "hsl(var(--input))", color: "hsl(var(--foreground))" }}
-                >
-                  {availableSizes.map(size => (
-                    <option key={size} value={size} style={{ background: "hsl(var(--input))" }}>{size}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
+              {hasAnyDimension && (
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-sm font-medium text-foreground/80 shrink-0">מידה</label>
+                  <select
+                    value={selectedSize}
+                    onChange={e => setSelectedSize(e.target.value)}
+                    className="flex-1 h-11 rounded-xl border border-white/[0.08] text-foreground text-sm px-3 focus:outline-none focus:border-primary/50"
+                    style={{ background: "hsl(var(--input))", color: "hsl(var(--foreground))" }}
+                  >
+                    {availableSizes.map(size => (
+                      <option key={size} value={size} style={{ background: "hsl(var(--input))" }}>{size}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className={`flex items-center gap-2 ${hasAnyDimension ? "shrink-0" : "flex-1 justify-between"}`}>
                 <label className="text-sm font-medium text-foreground/80">כמות</label>
                 <div className="flex items-center glass rounded-xl">
                   <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-11 h-11 flex items-center justify-center text-foreground/60 hover:text-primary transition-colors"><Minus className="w-4 h-4" /></button>

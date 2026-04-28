@@ -23,7 +23,10 @@ import { fallbackProducts } from '@/data/fallbackProducts';
 function dimsToSize(v) {
   if (v.name && /\d/.test(v.name)) return v.name;
   if (v.width_cm && v.length_cm) return `${v.width_cm}x${v.length_cm}`;
-  return v.name || v.sku || 'default';
+  // Don't fall back to SKU — internal codes like "MP140190" should never
+  // appear in the size dropdown. Returning null here lets the UI decide
+  // whether to show the selector at all.
+  return v.name || null;
 }
 
 function splitFeatures(text) {
@@ -141,7 +144,7 @@ function transformProduct(row) {
       ? Number(defaultVariation.final_price ?? defaultVariation.base_price ?? 0)
       : null,
     price_from: minFinal,
-    available_sizes: variations.map(dimsToSize),
+    available_sizes: variations.map(dimsToSize).filter(Boolean),
     is_on_sale: isOnSale,
     is_featured: row.is_active !== false,
     features: splitFeatures(row.features),
