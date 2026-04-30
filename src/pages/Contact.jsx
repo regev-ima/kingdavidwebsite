@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Phone, Mail, MapPin, Clock, Send, CheckCircle, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/components/ui/use-toast";
+import { trackEvent } from "@/lib/metaPixel";
 
 export default function Contact() {
   const { toast } = useToast();
@@ -28,6 +29,21 @@ export default function Contact() {
         source: "website",
         source_form: "contact_page",
         tags: ["אתר"],
+      });
+      const [firstName, ...rest] = form.name.trim().split(/\s+/);
+      trackEvent("Lead", {
+        userData: {
+          em: form.email || undefined,
+          ph: form.phone,
+          fn: firstName,
+          ln: rest.join(" ") || undefined,
+          external_id: form.phone,
+          country: "il",
+        },
+        customData: {
+          content_name: form.subject || "contact_page",
+          content_category: "contact_form",
+        },
       });
       setSubmitted(true);
       toast({ title: "הפנייה נשלחה בהצלחה!", description: "ניצור אתכם קשר בהקדם." });

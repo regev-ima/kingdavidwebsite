@@ -17,6 +17,7 @@ import { buildHypIframeUrl, isHypConfigured } from "@/lib/hyp";
 import { sendOrderEmail } from "@/lib/orderEmail";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { trackEvent } from "@/lib/metaPixel";
 
 const PAYMENT_METHODS = [
   {
@@ -44,6 +45,35 @@ const PAYMENT_METHODS = [
 
 function generateOrderNumber() {
   return "KD-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).substring(2, 5).toUpperCase();
+}
+
+function buildMetaUserData({ fullName, phone, email, city }) {
+  const [firstName, ...rest] = String(fullName || "").trim().split(/\s+/);
+  return {
+    em: email || undefined,
+    ph: phone || undefined,
+    fn: firstName || undefined,
+    ln: rest.join(" ") || undefined,
+    ct: city || undefined,
+    country: "il",
+    external_id: phone || email || undefined,
+  };
+}
+
+function buildPurchaseCustomData(payload) {
+  const contents = (payload.items || []).map((item) => ({
+    id: String(item.sku || item.variationId || item.productId || ""),
+    quantity: item.quantity,
+    item_price: item.unitPrice,
+  }));
+  return {
+    currency: "ILS",
+    value: Number(payload.total || 0),
+    content_type: "product",
+    content_ids: contents.map((c) => c.id).filter(Boolean),
+    contents,
+    num_items: contents.reduce((n, c) => n + (c.quantity || 0), 0),
+  };
 }
 
 export default function Checkout() {
@@ -331,7 +361,18 @@ export default function Checkout() {
 
     await persistOrderToCRM(num, data);
 
+    const userData = buildMetaUserData(data);
+    const payload = getCheckoutPayload();
+
     if (paymentMethod === "credit") {
+      // Customer is heading into the Hyp iframe — payment not yet
+      // confirmed. Fire InitiateCheckout; Purchase fires from
+      // handleHypSuccess once the gateway approves.
+      trackEvent("InitiateCheckout", {
+        eventId: `ic_${num}`,
+        userData,
+        customData: buildPurchaseCustomData(payload),
+      });
       const url = buildHypIframeUrl({
         orderNumber: num,
         amount: orderTotal,
@@ -361,6 +402,20 @@ export default function Checkout() {
       window.open(`https://wa.me/972549632221?text=${msg}`, "_blank");
     }
 
+    // Phone + WhatsApp = customer hasn't paid yet, only handed off
+    // contact info. CRM fires Purchase later from `phone_call` /
+    // `chat` action_source once the deal closes.
+    trackEvent("Lead", {
+      eventId: `lead_${num}`,
+      userData,
+      customData: {
+        content_name: paymentMethod === "whatsapp" ? "checkout_whatsapp" : "checkout_phone",
+        content_category: "checkout",
+        value: Number(payload.total || 0),
+        currency: "ILS",
+      },
+    });
+
     sendOrderEmail(snap);
     clearCart();
     setOrderComplete(true);
@@ -368,7 +423,23 @@ export default function Checkout() {
 
   function handleHypSuccess() {
     setHypIframeUrl(null);
-    if (completedOrder) sendOrderEmail(completedOrder);
+    if (completedOrder) {
+      sendOrderEmail(completedOrder);
+      // event_id = orderNumber so a CRM-side Purchase for the same
+      // order (e.g. refund/chargeback flow) won't duplicate this one.
+      trackEvent("Purchase", {
+        eventId: completedOrder.orderNumber,
+        userData: buildMetaUserData({
+          fullName: completedOrder.customer?.fullName,
+          phone: completedOrder.customer?.phone,
+          email: completedOrder.customer?.email,
+        }),
+        customData: {
+          ...buildPurchaseCustomData(completedOrder),
+          order_id: completedOrder.orderNumber,
+        },
+      });
+    }
     clearCart();
     setOrderComplete(true);
   }
