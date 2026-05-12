@@ -4,11 +4,17 @@ import { base44 } from "@/api/base44Client";
 const CartContext = createContext(null);
 
 const STORAGE_KEY = "kd_cart_v2";
-const ASSEMBLY_KEY = "kd_assembly";
+const DELIVERY_KEY = "kd_delivery_method";
 // Fallback shipping cost used only if the CRM `extra_charges` table is
 // empty / unreachable. Real prices come from the rules fetched below.
 const SHIPPING_COST_FALLBACK = 0;
-const ASSEMBLY_COST = 150;
+
+export const DELIVERY_METHODS = Object.freeze({
+  shipping: "shipping",
+  pickup: "pickup",
+});
+
+const PICKUP_LABEL = "איסוף עצמי בתיאום מראש";
 
 // Classify a cart item as "mattress", "bed" or "other" based on the
 // CRM category fields (mirrors the mapping in src/api/base44Client.js).
@@ -16,7 +22,15 @@ function classifyItem(item) {
   const cat = String(item.product?.category_raw || item.product?.category || "")
     .trim()
     .toLowerCase();
-  if (cat === "mattress" || cat === "מזרן" || cat === "מזרנים") return "mattress";
+  if (
+    cat === "mattress" ||
+    cat === "מזרן" ||
+    cat === "מזרנים" ||
+    cat === "מזרון" ||
+    cat === "מזרונים"
+  ) {
+    return "mattress";
+  }
   if (cat === "bed" || cat === "מיטה" || cat === "מיטות") return "bed";
   return "other";
 }
@@ -56,11 +70,12 @@ function loadCart() {
   }
 }
 
-function loadAssembly() {
+function loadDeliveryMethod() {
   try {
-    return localStorage.getItem(ASSEMBLY_KEY) === "true";
+    const v = localStorage.getItem(DELIVERY_KEY);
+    return v === DELIVERY_METHODS.pickup ? DELIVERY_METHODS.pickup : DELIVERY_METHODS.shipping;
   } catch {
-    return false;
+    return DELIVERY_METHODS.shipping;
   }
 }
 
@@ -100,7 +115,7 @@ function originalPriceFromVariation(variation, fallbackProduct) {
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState(loadCart);
-  const [withAssembly, setWithAssembly] = useState(loadAssembly);
+  const [deliveryMethod, setDeliveryMethodState] = useState(loadDeliveryMethod);
   const [shippingRules, setShippingRules] = useState([]);
 
   useEffect(() => {
@@ -108,8 +123,14 @@ export function CartProvider({ children }) {
   }, [items]);
 
   useEffect(() => {
-    localStorage.setItem(ASSEMBLY_KEY, String(withAssembly));
-  }, [withAssembly]);
+    localStorage.setItem(DELIVERY_KEY, deliveryMethod);
+  }, [deliveryMethod]);
+
+  const setDeliveryMethod = useCallback((method) => {
+    setDeliveryMethodState(
+      method === DELIVERY_METHODS.pickup ? DELIVERY_METHODS.pickup : DELIVERY_METHODS.shipping,
+    );
+  }, []);
 
   // Fetch the extra_charges rules from Supabase once on mount. RLS on
   // the table must allow public select for is_active = true.
@@ -187,8 +208,6 @@ export function CartProvider({ children }) {
 
   const clearCart = useCallback(() => setItems([]), []);
 
-  const setAssembly = useCallback((val) => setWithAssembly(val), []);
-
   // Backwards-compat: support legacy cart items that don't have `unitPrice`
   const lineUnitPrice = (i) =>
     i.unitPrice ?? i.product?.sale_price ?? i.product?.price ?? 0;
@@ -242,21 +261,30 @@ export function CartProvider({ children }) {
   }, [items]);
 
   const matchedShippingRule = useMemo(() => {
+    if (deliveryMethod === DELIVERY_METHODS.pickup) return null;
     if (items.length === 0) return null;
     if (!shippingRules.length) return null;
     return pickShippingRule(shippingRules, cartCounts);
-  }, [items.length, cartCounts, shippingRules]);
+  }, [deliveryMethod, items.length, cartCounts, shippingRules]);
 
   const shippingCost = useMemo(() => {
+    if (deliveryMethod === DELIVERY_METHODS.pickup) return 0;
     if (items.length === 0) return 0;
     if (matchedShippingRule) return Number(matchedShippingRule.cost || 0);
     return SHIPPING_COST_FALLBACK;
-  }, [items.length, matchedShippingRule]);
+  }, [deliveryMethod, items.length, matchedShippingRule]);
 
-  const assemblyCost = withAssembly ? ASSEMBLY_COST : 0;
+  // Assembly is now bundled into the relevant shipping rule (e.g.
+  // "הובלה והרכבה ל-2 מיטות"), so the website no longer charges a
+  // separate assembly fee. The fields stay in the payload as 0/false
+  // for CRM backward compatibility.
+  const assemblyCost = 0;
+  const withAssembly = false;
   const orderTotal = cartTotal + shippingCost + assemblyCost;
 
-  const shippingLabel = matchedShippingRule?.name || "";
+  const shippingLabel = deliveryMethod === DELIVERY_METHODS.pickup
+    ? PICKUP_LABEL
+    : (matchedShippingRule?.name || "");
 
   const getCheckoutPayload = useCallback(() => ({
     items: items.map((i) => {
@@ -282,16 +310,21 @@ export function CartProvider({ children }) {
     savings: cartSavings,
     shipping: shippingCost,
     shippingLabel,
+    deliveryMethod,
     assembly: assemblyCost,
     withAssembly,
     total: orderTotal,
-  }), [items, cartTotal, cartSavings, shippingCost, shippingLabel, assemblyCost, withAssembly, orderTotal]);
+  }), [items, cartTotal, cartSavings, shippingCost, shippingLabel, deliveryMethod, assemblyCost, withAssembly, orderTotal]);
+
+  // Legacy no-op kept so callers that still import setAssembly don't crash.
+  const setAssembly = useCallback(() => {}, []);
 
   return (
     <CartContext.Provider value={{
       items, addItem, removeItem, updateQuantity, clearCart,
       cartTotal, cartCount, cartSavings,
       withAssembly, setAssembly,
+      deliveryMethod, setDeliveryMethod,
       shippingCost, shippingLabel, assemblyCost, orderTotal,
       getCheckoutPayload,
     }}>

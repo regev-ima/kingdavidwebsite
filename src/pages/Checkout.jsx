@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Phone, MessageCircle, CreditCard, CheckCircle2, ArrowRight } from "lucide-react";
+import { Phone, MessageCircle, CreditCard, CheckCircle2, ArrowRight, Truck, Store } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,8 @@ function generateOrderNumber() {
 export default function Checkout() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { items, getCheckoutPayload, clearCart, orderTotal } = useCart();
+  const { items, getCheckoutPayload, clearCart, orderTotal, deliveryMethod, setDeliveryMethod } = useCart();
+  const isPickup = deliveryMethod === "pickup";
 
   const [paymentMethod, setPaymentMethod] = useState("phone");
   const [orderComplete, setOrderComplete] = useState(false);
@@ -195,10 +196,15 @@ export default function Checkout() {
                   <p className="text-foreground/80 text-right break-all" dir="ltr" style={{ unicodeBidi: "plaintext" }}>{o.customer.email}</p>
                 </div>
                 <div className="space-y-0.5">
-                  <h3 className="text-xs font-semibold text-muted-foreground mb-1.5">כתובת למשלוח</h3>
+                  <h3 className="text-xs font-semibold text-muted-foreground mb-1.5">
+                    {o.deliveryMethod === "pickup" ? "אופן קבלה" : "כתובת למשלוח"}
+                  </h3>
                   <p className="text-foreground">{o.delivery.address}</p>
                   {o.delivery.apartment && (
                     <p className="text-foreground/80">דירה {o.delivery.apartment}</p>
+                  )}
+                  {o.deliveryMethod === "pickup" && (
+                    <p className="text-foreground/60 text-xs">בתיאום מראש, ימים א-ה 10:00-16:00</p>
                   )}
                   {o.delivery.notes && (
                     <p className="text-foreground/60 text-xs mt-1">הערה: {o.delivery.notes}</p>
@@ -226,9 +232,13 @@ export default function Checkout() {
     msg += `*שם:* ${fullName}\n`;
     msg += `*טלפון:* ${data.phone}\n`;
     msg += `*אימייל:* ${data.email}\n`;
-    msg += `*כתובת:* ${data.formatted_address || `${data.street}, ${data.city}`}`;
-    if (data.apartment) msg += ` דירה ${data.apartment}`;
-    msg += `\n`;
+    if (isPickup) {
+      msg += `*איסוף:* איסוף עצמי (ימים א-ה 10:00-16:00, בתיאום מראש)\n`;
+    } else {
+      msg += `*כתובת:* ${data.formatted_address || `${data.street}, ${data.city}`}`;
+      if (data.apartment) msg += ` דירה ${data.apartment}`;
+      msg += `\n`;
+    }
     if (data.notes) msg += `*הערות:* ${data.notes}\n`;
     msg += `\n*פריטים:*\n`;
     payload.items.forEach((item) => {
@@ -238,8 +248,7 @@ export default function Checkout() {
       msg += ` x${item.quantity} = ₪${item.lineTotal.toLocaleString()}\n`;
     });
     msg += `\n*סכום ביניים:* ₪${payload.subtotal.toLocaleString()}`;
-    msg += `\n*משלוח:* ₪${payload.shipping}`;
-    if (payload.withAssembly) msg += `\n*הרכבה:* ₪${payload.assembly}`;
+    msg += `\n*${isPickup ? "איסוף עצמי" : "משלוח"}:* ${isPickup ? "ללא עלות" : `₪${payload.shipping}`}`;
     msg += `\n*סה"כ:* ₪${payload.total.toLocaleString()}`;
     return encodeURIComponent(msg);
   }
@@ -272,9 +281,10 @@ export default function Checkout() {
       with_assembly: payload.withAssembly,
       assembly: payload.assembly,
       payment_method: paymentMethod,
+      delivery_method: deliveryMethod,
       website_notes: data.notes || null,
-      google_place_id: data.place_id || null,
-      google_formatted_address: data.formatted_address || null,
+      google_place_id: isPickup ? null : (data.place_id || null),
+      google_formatted_address: isPickup ? null : (data.formatted_address || null),
     };
 
     const orderRow = {
@@ -282,13 +292,15 @@ export default function Checkout() {
       source: "website",
       payment_status: "pending",
       production_status: "new",
-      delivery_status: "pending",
+      delivery_status: isPickup ? "pickup_pending" : "pending",
       customer_name: `${data.firstName} ${data.lastName}`.trim(),
       customer_phone: data.phone,
       customer_email: data.email,
-      delivery_address: [data.street, data.apartment].filter(Boolean).join(", ") || null,
-      delivery_city: data.city,
-      apartment_number: data.apartment || null,
+      delivery_address: isPickup
+        ? null
+        : [data.street, data.apartment].filter(Boolean).join(", ") || null,
+      delivery_city: isPickup ? null : (data.city || null),
+      apartment_number: isPickup ? null : (data.apartment || null),
       items: itemsJsonb,
       extras,
       subtotal: payload.subtotal,
@@ -313,6 +325,7 @@ export default function Checkout() {
     return {
       orderNumber: num,
       paymentMethod,
+      deliveryMethod,
       customer: {
         fullName: `${data.firstName} ${data.lastName}`.trim(),
         firstName: data.firstName,
@@ -320,16 +333,33 @@ export default function Checkout() {
         phone: data.phone,
         email: data.email,
       },
-      delivery: {
-        address: data.formatted_address || `${data.street}, ${data.city}`,
-        apartment: data.apartment || "",
-        notes: data.notes || "",
-      },
+      delivery: isPickup
+        ? {
+            address: "איסוף עצמי",
+            apartment: "",
+            notes: data.notes || "",
+          }
+        : {
+            address: data.formatted_address || `${data.street}, ${data.city}`,
+            apartment: data.apartment || "",
+            notes: data.notes || "",
+          },
       ...getCheckoutPayload(),
     };
   }
 
   async function onSubmit(data) {
+    // Address fields are optional in the schema (so pickup can submit
+    // without one) — enforce them here when the customer chose shipping.
+    if (!isPickup && !data.place_id) {
+      toast({
+        title: "נא לבחור כתובת",
+        description: "בחר כתובת מאומתת מההצעות של Google, או עבור לאיסוף עצמי.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const num = generateOrderNumber();
     setOrderNumber(num);
 
@@ -471,7 +501,29 @@ export default function Checkout() {
               </div>
             </section>
 
-            {/* Section 2: Shipping */}
+            {/* Section 2: Delivery method */}
+            <section className="glass-card p-6 md:p-8 space-y-5">
+              <h2 className="text-lg font-bold text-foreground">אופן קבלת המוצר</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <DeliveryOption
+                  icon={Truck}
+                  title="משלוח עד הבית"
+                  description="עלות המשלוח לפי תוכן ההזמנה"
+                  selected={!isPickup}
+                  onClick={() => setDeliveryMethod("shipping")}
+                />
+                <DeliveryOption
+                  icon={Store}
+                  title="איסוף עצמי"
+                  description="בתיאום מראש, ימים א-ה 10:00-16:00"
+                  selected={isPickup}
+                  onClick={() => setDeliveryMethod("pickup")}
+                />
+              </div>
+            </section>
+
+            {/* Section 3: Shipping address (only for home delivery) */}
+            {!isPickup && (
             <section className="glass-card p-6 md:p-8 space-y-5">
               <h2 className="text-lg font-bold text-foreground">כתובת למשלוח</h2>
 
@@ -516,8 +568,27 @@ export default function Checkout() {
                 />
               </div>
             </section>
+            )}
 
-            {/* Section 3: Payment method */}
+            {isPickup && (
+              <section className="glass-card p-6 md:p-8 space-y-3">
+                <h2 className="text-lg font-bold text-foreground">תיאום איסוף</h2>
+                <p className="text-sm text-muted-foreground">
+                  לאחר השלמת ההזמנה, נציג ייצור איתך קשר טלפוני לתיאום מועד האיסוף.
+                  שעות פעילות: <span className="text-foreground/90">ימים א-ה, 10:00-16:00</span>.
+                </p>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground/80">הערות לאיסוף</label>
+                  <Textarea
+                    {...register("notes")}
+                    placeholder="הערות נוספות (אופציונלי) — למשל זמן מועדף"
+                    rows={3}
+                  />
+                </div>
+              </section>
+            )}
+
+            {/* Section 4: Payment method */}
             <section className="glass-card p-6 md:p-8 space-y-5">
               <h2 className="text-lg font-bold text-foreground">אמצעי תשלום</h2>
 
@@ -586,5 +657,38 @@ export default function Checkout() {
         onClose={() => setHypIframeUrl(null)}
       />
     </div>
+  );
+}
+
+function DeliveryOption({ icon: Icon, title, description, selected, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-start gap-3 p-4 rounded-xl border transition-all min-h-[44px] text-right ${
+        selected
+          ? "border-primary/50 bg-primary/[0.08] ring-1 ring-primary/30"
+          : "border-white/[0.08] glass hover:border-white/[0.15]"
+      }`}
+    >
+      <div
+        className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+          selected ? "bg-primary/20 text-primary" : "bg-white/[0.06] text-foreground/60"
+        }`}
+      >
+        <Icon className="w-5 h-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-foreground text-sm">{title}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+      </div>
+      <div
+        className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center mt-1 ${
+          selected ? "border-primary" : "border-white/20"
+        }`}
+      >
+        {selected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+      </div>
+    </button>
   );
 }

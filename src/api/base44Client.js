@@ -46,7 +46,13 @@ function mapCategoryToHebrew(rawCategory, rawBedType) {
   const cat = (rawCategory || '').toString().trim().toLowerCase();
   const type = (rawBedType || '').toString().trim().toLowerCase();
 
-  if (cat === 'mattress' || cat === 'מזרן' || cat === 'מזרנים') {
+  if (
+    cat === 'mattress' ||
+    cat === 'מזרן' ||
+    cat === 'מזרנים' ||
+    cat === 'מזרון' ||
+    cat === 'מזרונים'
+  ) {
     if (type === 'single' || type === 'יחיד') return 'מזרני יחיד';
     if (type === 'double' || type === 'זוגי') return 'מזרנים זוגיים';
     return 'מזרנים';

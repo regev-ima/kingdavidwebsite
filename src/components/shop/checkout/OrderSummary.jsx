@@ -5,9 +5,11 @@ import { optimizeImage } from "@/lib/image";
 
 export default function OrderSummary({ collapsibleOnMobile = true }) {
   const {
-    items, cartTotal, cartSavings, withAssembly, setAssembly,
-    shippingCost, assemblyCost, orderTotal,
+    items, cartTotal, cartSavings,
+    shippingCost, shippingLabel, deliveryMethod, orderTotal,
   } = useCart();
+
+  const isPickup = deliveryMethod === "pickup";
 
   const [expanded, setExpanded] = useState(false);
 
@@ -66,25 +68,17 @@ export default function OrderSummary({ collapsibleOnMobile = true }) {
         <span>₪{cartTotal.toLocaleString()}</span>
       </div>
       <div className="flex justify-between text-sm text-foreground/80">
-        <span>משלוח</span>
-        <span>₪{shippingCost}</span>
+        <span>{isPickup ? "איסוף עצמי" : "משלוח"}</span>
+        <span>{isPickup ? "ללא עלות" : `₪${shippingCost}`}</span>
       </div>
-
-      <label className="flex items-center justify-between text-sm cursor-pointer min-h-[44px]">
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={withAssembly}
-            onChange={(e) => setAssembly(e.target.checked)}
-            className="w-4 h-4 rounded border-white/20 accent-primary"
-          />
-          <span className="text-foreground/80">הרכבה (+₪150)</span>
-        </div>
-        {withAssembly && <span className="text-foreground/80">₪150</span>}
-      </label>
+      {!isPickup && shippingLabel && (
+        <p className="text-[11px] text-muted-foreground/70 -mt-1">{shippingLabel}</p>
+      )}
 
       <p className="text-[11px] text-muted-foreground/60">
-        *המשלוחים אינם כוללים צפון/דרום רחוק
+        {isPickup
+          ? "*האיסוף בתיאום מראש, ימים א-ה בין השעות 10:00-16:00"
+          : "*המשלוחים אינם כוללים צפון/דרום רחוק"}
       </p>
 
       {cartSavings > 0 && (

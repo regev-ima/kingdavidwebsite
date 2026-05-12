@@ -54,7 +54,9 @@ update public.extra_charges
 -- 1 bed (with or without 1 mattress) — bed assembly included.
 update public.extra_charges
   set min_mattresses = 0, max_mattresses = 1, min_beds = 1, max_beds = 1
-  where name like 'בה למזרן + מיטה%' or name like 'בעבור מיטה%';
+  where name like '%למזרן + מיטה%'
+     or name like '%בעבור מיטה%'
+     or name like '%מיטה / משטח%';
 
 -- 2+ beds (with or without mattresses).
 update public.extra_charges
