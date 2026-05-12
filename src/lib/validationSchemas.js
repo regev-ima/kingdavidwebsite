@@ -1,15 +1,19 @@
 import { z } from "zod";
 
+const phoneValidator = z
+  .string()
+  .min(1, "נא להזין מספר טלפון")
+  .regex(/^05\d[-]?\d{7}$/, "מספר טלפון לא תקין (05X-XXXXXXX)");
+
+const emailValidator = z
+  .string()
+  .min(1, "נא להזין כתובת אימייל")
+  .email("כתובת אימייל לא תקינה");
+
 export const contactSchema = z.object({
   fullName: z.string().min(2, "נא להזין שם מלא"),
-  phone: z
-    .string()
-    .min(1, "נא להזין מספר טלפון")
-    .regex(/^05\d[-]?\d{7}$/, "מספר טלפון לא תקין (05X-XXXXXXX)"),
-  email: z
-    .string()
-    .min(1, "נא להזין כתובת אימייל")
-    .email("כתובת אימייל לא תקינה"),
+  phone: phoneValidator,
+  email: emailValidator,
 });
 
 export const shippingSchema = z.object({
@@ -24,7 +28,17 @@ export const shippingSchema = z.object({
   notes: z.string().optional(),
 });
 
-export const checkoutSchema = contactSchema.merge(shippingSchema);
+// Checkout uses split first/last name so the Hyp payment page can
+// pre-fill ClientName + ClientLName cleanly — Hyp keeps them as
+// separate required fields.
+export const checkoutSchema = z
+  .object({
+    firstName: z.string().min(1, "נא להזין שם פרטי"),
+    lastName: z.string().min(1, "נא להזין שם משפחה"),
+    phone: phoneValidator,
+    email: emailValidator,
+  })
+  .merge(shippingSchema);
 
 export const clubSignupSchema = contactSchema.extend({
   city: z.string().optional(),

@@ -73,14 +73,18 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ ok: false, error: "missing_fields" }, 400);
   }
 
-  // Best-effort first/last name split for Hyp's separate ClientName /
-  // ClientLName fields. Our checkout form collects a single full-name
-  // string, so we pick everything up to the first space as the first
-  // name and the rest as the surname.
-  const fullName = String(customer?.fullName || "").trim();
-  const firstSpace = fullName.indexOf(" ");
-  const firstName = firstSpace === -1 ? fullName : fullName.slice(0, firstSpace);
-  const lastName = firstSpace === -1 ? "" : fullName.slice(firstSpace + 1).trim();
+  // The checkout form collects first and last name separately so we
+  // can map them straight onto Hyp's ClientName / ClientLName fields.
+  // Older callers that only know fullName fall back to a best-effort
+  // split on the first space.
+  let firstName = String(customer?.firstName || "").trim();
+  let lastName = String(customer?.lastName || "").trim();
+  if (!firstName && !lastName) {
+    const fullName = String(customer?.fullName || "").trim();
+    const firstSpace = fullName.indexOf(" ");
+    firstName = firstSpace === -1 ? fullName : fullName.slice(0, firstSpace);
+    lastName = firstSpace === -1 ? "" : fullName.slice(firstSpace + 1).trim();
+  }
 
   const signParams = new URLSearchParams({
     action: "APISign",
