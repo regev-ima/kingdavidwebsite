@@ -347,6 +347,8 @@ export default function Checkout() {
             fullName: data.fullName,
             email: data.email,
             phone: data.phone,
+            street: [data.street, data.apartment].filter(Boolean).join(", "),
+            city: data.city,
           },
         });
         setCompletedOrder(snapshotOrder(num, data));
