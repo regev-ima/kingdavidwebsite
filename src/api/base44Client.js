@@ -497,6 +497,34 @@ const blogPostEntity = {
   },
 };
 
+// Shipping/extra-charge rules. The CRM owns the `extra_charges` table
+// (a row per "rule" — e.g. "הובלה ל-2 מזרנים", 350₪). The website
+// reads the active rows and matches them against the cart contents
+// in CartContext to compute the actual shipping cost.
+const extraChargeEntity = {
+  async list() {
+    if (!isSupabaseConfigured) return [];
+    const { data, error } = await supabase
+      .from('extra_charges')
+      .select('id, name, cost, min_mattresses, max_mattresses, min_beds, max_beds, priority')
+      .eq('is_active', true);
+    if (error) {
+      console.warn('[base44Client shim] extra_charges fetch failed:', error.message);
+      return [];
+    }
+    return data || [];
+  },
+  async filter() {
+    return [];
+  },
+  async get() {
+    return null;
+  },
+  async create() {
+    throw new Error('[base44Client shim] ExtraCharge.create is disabled on the website — manage rules in the CRM.');
+  },
+};
+
 const ENTITIES = {
   Product: productEntity,
   Order: orderEntity,
@@ -509,6 +537,7 @@ const ENTITIES = {
   // lands as a tagged lead in the CRM.
   ContactInquiry: leadEntity,
   BlogPost: blogPostEntity,
+  ExtraCharge: extraChargeEntity,
 };
 
 const entities = new Proxy(

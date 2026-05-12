@@ -67,6 +67,24 @@
 --   delivery_status     text     -- "pending"
 --   notes_sales         text
 
+-- extra_charges (shipping rules — website reads, CRM dashboard owns)
+--   id              uuid
+--   created_date    timestamptz
+--   name            text       -- human label shown in the CRM
+--   description     text
+--   cost            numeric    -- shipping price in ILS
+--   is_active       bool
+--   min_mattresses  int   default 0  -- inclusive lower bound on cart mattresses
+--   max_mattresses  int               -- NULL = no upper bound
+--   min_beds        int   default 0
+--   max_beds        int               -- NULL = no upper bound
+--   priority        int   default 0  -- tie-breaker; higher wins
+--
+-- The website fetches active rows on cart load and picks the rule
+-- whose [min_*, max_*] ranges include the current cart's mattress
+-- and bed counts. See supabase/migrations/018_extra_charges_rules.sql
+-- for the column add + RLS policy.
+
 -- ============================================================
 -- RLS — required policies on the kcrm side for the website anon key
 -- ============================================================
