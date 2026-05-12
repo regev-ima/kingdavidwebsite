@@ -52,7 +52,7 @@ Deno.serve(async (req: Request) => {
   const masof = Deno.env.get("HYP_TERMINAL");
   const passp = Deno.env.get("HYP_PASSP");
   const apiKey = Deno.env.get("HYP_API_KEY") || passp;
-  const baseUrl = Deno.env.get("HYP_BASE_URL") || "https://icom.yaad.net/p/";
+  const baseUrl = Deno.env.get("HYP_BASE_URL") || "https://pay.hyp.co.il/p/";
 
   if (!masof || !passp) {
     return jsonResponse(

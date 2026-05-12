@@ -27,7 +27,7 @@ const MESSAGE_ORIGIN = "hyp-return";
 export const HYP_MODE = import.meta.env.VITE_HYP_MODE || "test";
 export const HYP_TERMINAL = import.meta.env.VITE_HYP_TERMINAL || "";
 export const HYP_BASE_URL =
-  import.meta.env.VITE_HYP_BASE_URL || "https://icom.yaad.net/p/";
+  import.meta.env.VITE_HYP_BASE_URL || "https://pay.hyp.co.il/p/";
 
 export function isHypConfigured() {
   return HYP_MODE === "live" && HYP_TERMINAL.trim().length > 0;
