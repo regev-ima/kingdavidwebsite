@@ -332,24 +332,33 @@ export default function Checkout() {
     await persistOrderToCRM(num, data);
 
     if (paymentMethod === "credit") {
-      const url = buildHypIframeUrl({
-        orderNumber: num,
-        amount: orderTotal,
-        info: `הזמנה ${num}`,
-        customer: {
-          fullName: data.fullName,
-          email: data.email,
-          phone: data.phone,
-        },
-      });
       if (!isHypConfigured()) {
         toast({
           title: "מצב הדמיה",
           description: "Hyp terminal לא מוגדר — נפתח דף סליקה להדמיה בלבד.",
         });
       }
-      setCompletedOrder(snapshotOrder(num, data));
-      setHypIframeUrl(url);
+      try {
+        const url = await buildHypIframeUrl({
+          orderNumber: num,
+          amount: orderTotal,
+          info: `הזמנה ${num}`,
+          customer: {
+            fullName: data.fullName,
+            email: data.email,
+            phone: data.phone,
+          },
+        });
+        setCompletedOrder(snapshotOrder(num, data));
+        setHypIframeUrl(url);
+      } catch (err) {
+        console.error("[checkout] Failed to build Hyp iframe URL:", err);
+        toast({
+          title: "תקלה בפתיחת דף התשלום",
+          description: "נסה שוב, או בחר אמצעי תשלום אחר.",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
