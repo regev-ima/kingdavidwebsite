@@ -37,6 +37,9 @@ export const checkoutSchema = z
     lastName: z.string().min(1, "נא להזין שם משפחה"),
     phone: phoneValidator,
     email: emailValidator,
+    acceptedTerms: z
+      .boolean()
+      .refine((v) => v === true, "נא לאשר את תנאי השימוש ומדיניות המשלוחים"),
   })
   .merge(shippingSchema);
 

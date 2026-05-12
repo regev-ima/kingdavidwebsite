@@ -73,6 +73,7 @@ export default function Checkout() {
       lastName: "",
       phone: "",
       email: "",
+      acceptedTerms: false,
       city: "",
       street: "",
       place_id: "",
@@ -503,7 +504,7 @@ export default function Checkout() {
 
             {/* Section 2: Delivery method */}
             <section className="glass-card p-6 md:p-8 space-y-5">
-              <h2 className="text-lg font-bold text-foreground">אופן קבלת המוצר</h2>
+              <h2 className="text-lg font-bold text-foreground">שיטת משלוח</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <DeliveryOption
                   icon={Truck}
@@ -632,6 +633,35 @@ export default function Checkout() {
                 })}
               </div>
             </section>
+
+            {/* Terms & conditions — shipping policy only relevant for home delivery */}
+            <div className="space-y-1.5">
+              <label className="flex items-start gap-3 cursor-pointer text-sm text-foreground/85 leading-relaxed">
+                <input
+                  type="checkbox"
+                  {...register("acceptedTerms")}
+                  className="mt-1 w-4 h-4 rounded border-white/20 accent-primary shrink-0"
+                />
+                <span>
+                  אני מאשר/ת את{" "}
+                  <Link to="/Terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                    תנאי השימוש
+                  </Link>
+                  {!isPickup && (
+                    <>
+                      {" "}ואת{" "}
+                      <Link to="/Shipping" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                        מדיניות המשלוחים
+                      </Link>
+                    </>
+                  )}
+                  .
+                </span>
+              </label>
+              {errors.acceptedTerms && (
+                <p className="text-sm text-red-400 pr-7">{errors.acceptedTerms.message}</p>
+              )}
+            </div>
 
             {/* Submit button */}
             <Button
