@@ -1,11 +1,51 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import { base44 } from "@/api/base44Client";
 
 const CartContext = createContext(null);
 
 const STORAGE_KEY = "kd_cart_v2";
 const ASSEMBLY_KEY = "kd_assembly";
-const SHIPPING_COST = 250;
+// Fallback shipping cost used only if the CRM `extra_charges` table is
+// empty / unreachable. Real prices come from the rules fetched below.
+const SHIPPING_COST_FALLBACK = 0;
 const ASSEMBLY_COST = 150;
+
+// Classify a cart item as "mattress", "bed" or "other" based on the
+// CRM category fields (mirrors the mapping in src/api/base44Client.js).
+function classifyItem(item) {
+  const cat = String(item.product?.category_raw || item.product?.category || "")
+    .trim()
+    .toLowerCase();
+  if (cat === "mattress" || cat === "מזרן" || cat === "מזרנים") return "mattress";
+  if (cat === "bed" || cat === "מיטה" || cat === "מיטות") return "bed";
+  return "other";
+}
+
+// Pick the best-matching extra_charges row for the cart counts.
+// A rule matches when both mattress and bed counts are inside its
+// [min, max] ranges (NULL max = unbounded). Ties break on `priority`
+// (higher wins), then on `cost` (higher wins).
+function pickShippingRule(rules, counts) {
+  const matches = rules.filter((r) => {
+    const minM = Number(r.min_mattresses || 0);
+    const maxM = r.max_mattresses == null ? Infinity : Number(r.max_mattresses);
+    const minB = Number(r.min_beds || 0);
+    const maxB = r.max_beds == null ? Infinity : Number(r.max_beds);
+    return (
+      counts.mattresses >= minM &&
+      counts.mattresses <= maxM &&
+      counts.beds >= minB &&
+      counts.beds <= maxB
+    );
+  });
+  if (!matches.length) return null;
+  matches.sort(
+    (a, b) =>
+      Number(b.priority || 0) - Number(a.priority || 0) ||
+      Number(b.cost || 0) - Number(a.cost || 0)
+  );
+  return matches[0];
+}
 
 function loadCart() {
   try {
@@ -61,6 +101,7 @@ function originalPriceFromVariation(variation, fallbackProduct) {
 export function CartProvider({ children }) {
   const [items, setItems] = useState(loadCart);
   const [withAssembly, setWithAssembly] = useState(loadAssembly);
+  const [shippingRules, setShippingRules] = useState([]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -69,6 +110,23 @@ export function CartProvider({ children }) {
   useEffect(() => {
     localStorage.setItem(ASSEMBLY_KEY, String(withAssembly));
   }, [withAssembly]);
+
+  // Fetch the extra_charges rules from Supabase once on mount. RLS on
+  // the table must allow public select for is_active = true.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rules = await base44.entities.ExtraCharge.list();
+        if (!cancelled) setShippingRules(Array.isArray(rules) ? rules : []);
+      } catch (err) {
+        console.error("[cart] failed to load shipping rules:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const addItem = useCallback((product, size, quantity = 1, withStorage = false, addons = []) => {
     const variation = resolveVariation(product, size);
@@ -169,9 +227,36 @@ export function CartProvider({ children }) {
     [items]
   );
 
-  const shippingCost = SHIPPING_COST;
+  // Count mattresses + beds across the cart so the rule engine has
+  // something to match against. Items in unknown categories are
+  // ignored (they don't push the order into a higher shipping tier).
+  const cartCounts = useMemo(() => {
+    let mattresses = 0;
+    let beds = 0;
+    for (const item of items) {
+      const kind = classifyItem(item);
+      if (kind === "mattress") mattresses += item.quantity;
+      else if (kind === "bed") beds += item.quantity;
+    }
+    return { mattresses, beds };
+  }, [items]);
+
+  const matchedShippingRule = useMemo(() => {
+    if (items.length === 0) return null;
+    if (!shippingRules.length) return null;
+    return pickShippingRule(shippingRules, cartCounts);
+  }, [items.length, cartCounts, shippingRules]);
+
+  const shippingCost = useMemo(() => {
+    if (items.length === 0) return 0;
+    if (matchedShippingRule) return Number(matchedShippingRule.cost || 0);
+    return SHIPPING_COST_FALLBACK;
+  }, [items.length, matchedShippingRule]);
+
   const assemblyCost = withAssembly ? ASSEMBLY_COST : 0;
   const orderTotal = cartTotal + shippingCost + assemblyCost;
+
+  const shippingLabel = matchedShippingRule?.name || "";
 
   const getCheckoutPayload = useCallback(() => ({
     items: items.map((i) => {
@@ -196,17 +281,18 @@ export function CartProvider({ children }) {
     subtotal: cartTotal,
     savings: cartSavings,
     shipping: shippingCost,
+    shippingLabel,
     assembly: assemblyCost,
     withAssembly,
     total: orderTotal,
-  }), [items, cartTotal, cartSavings, shippingCost, assemblyCost, withAssembly, orderTotal]);
+  }), [items, cartTotal, cartSavings, shippingCost, shippingLabel, assemblyCost, withAssembly, orderTotal]);
 
   return (
     <CartContext.Provider value={{
       items, addItem, removeItem, updateQuantity, clearCart,
       cartTotal, cartCount, cartSavings,
       withAssembly, setAssembly,
-      shippingCost, assemblyCost, orderTotal,
+      shippingCost, shippingLabel, assemblyCost, orderTotal,
       getCheckoutPayload,
     }}>
       {children}
