@@ -61,7 +61,7 @@ export default function Navbar() {
   };
 
   const linkClass = (path, active) =>
-    `relative px-3 py-2 text-[13px] tracking-wide font-light transition-all flex items-center gap-1 ${
+    `relative px-3 py-2 text-[13px] tracking-wide font-light transition-all flex items-center gap-1 whitespace-nowrap ${
       active
         ? "text-primary"
         : "text-foreground/60 hover:text-primary"
