@@ -17,12 +17,12 @@ export const contactSchema = z.object({
 });
 
 export const shippingSchema = z.object({
-  // city + street are populated by the Google Places autocomplete.
-  // place_id is required to guarantee the address was selected from the
-  // Google suggestion list (not free-typed).
-  city: z.string().min(2, "נא לבחור כתובת מאומתת"),
-  street: z.string().min(2, "נא לבחור כתובת מאומתת"),
-  place_id: z.string().min(1, "נא לבחור כתובת מתוך ההצעות של Google"),
+  // city + street + place_id are technically optional in the form
+  // schema because pickup orders don't need them; the Checkout page
+  // enforces them at submit time when deliveryMethod === "shipping".
+  city: z.string().optional(),
+  street: z.string().optional(),
+  place_id: z.string().optional(),
   formatted_address: z.string().optional(),
   apartment: z.string().optional(),
   notes: z.string().optional(),
