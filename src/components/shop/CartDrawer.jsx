@@ -10,8 +10,6 @@ export default function CartDrawer({ open, onClose }) {
   const {
     items, removeItem, updateQuantity, clearCart,
     cartTotal, cartCount, cartSavings,
-    withAssembly, setAssembly,
-    shippingCost, assemblyCost, orderTotal,
   } = useCart();
 
   const navigate = useNavigate();
@@ -125,27 +123,8 @@ export default function CartDrawer({ open, onClose }) {
                   <span>סכום ביניים</span>
                   <span>₪{cartTotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-sm text-foreground/80">
-                  <span>משלוח</span>
-                  <span>₪{shippingCost}</span>
-                </div>
-
-                {/* Assembly option */}
-                <label className="flex items-center justify-between text-sm cursor-pointer min-h-[44px]">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={withAssembly}
-                      onChange={(e) => setAssembly(e.target.checked)}
-                      className="w-4 h-4 rounded border-white/20 accent-primary"
-                    />
-                    <span className="text-foreground/80">הרכבה (+₪150)</span>
-                  </div>
-                  {withAssembly && <span className="text-foreground/80">₪150</span>}
-                </label>
-
                 <p className="text-[11px] text-muted-foreground/60">
-                  * המשלוחים אינם כוללים את הצפון הרחוק והדרום הרחוק
+                  *עלות המשלוח תיקבע בעמוד התשלום לפי שיטת המשלוח שתבחר.
                 </p>
 
                 {cartSavings > 0 && (
@@ -160,7 +139,7 @@ export default function CartDrawer({ open, onClose }) {
 
                 <div className="flex justify-between text-foreground font-bold text-lg pt-2 border-t border-white/[0.08]">
                   <span>סה"כ</span>
-                  <span className="text-primary">₪{orderTotal.toLocaleString()}</span>
+                  <span className="text-primary">₪{cartTotal.toLocaleString()}</span>
                 </div>
 
                 <Button
