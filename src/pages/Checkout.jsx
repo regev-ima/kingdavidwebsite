@@ -68,7 +68,8 @@ export default function Checkout() {
   } = useForm({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      lastName: "",
       phone: "",
       email: "",
       city: "",
@@ -220,8 +221,9 @@ export default function Checkout() {
 
   function buildWhatsAppMessage(data) {
     const payload = getCheckoutPayload();
+    const fullName = `${data.firstName} ${data.lastName}`.trim();
     let msg = `*הזמנה חדשה - King David*\n\n`;
-    msg += `*שם:* ${data.fullName}\n`;
+    msg += `*שם:* ${fullName}\n`;
     msg += `*טלפון:* ${data.phone}\n`;
     msg += `*אימייל:* ${data.email}\n`;
     msg += `*כתובת:* ${data.formatted_address || `${data.street}, ${data.city}`}`;
@@ -281,7 +283,7 @@ export default function Checkout() {
       payment_status: "pending",
       production_status: "new",
       delivery_status: "pending",
-      customer_name: data.fullName,
+      customer_name: `${data.firstName} ${data.lastName}`.trim(),
       customer_phone: data.phone,
       customer_email: data.email,
       delivery_address: [data.street, data.apartment].filter(Boolean).join(", ") || null,
@@ -312,7 +314,9 @@ export default function Checkout() {
       orderNumber: num,
       paymentMethod,
       customer: {
-        fullName: data.fullName,
+        fullName: `${data.firstName} ${data.lastName}`.trim(),
+        firstName: data.firstName,
+        lastName: data.lastName,
         phone: data.phone,
         email: data.email,
       },
@@ -344,7 +348,8 @@ export default function Checkout() {
           amount: orderTotal,
           info: `הזמנה ${num}`,
           customer: {
-            fullName: data.fullName,
+            firstName: data.firstName,
+            lastName: data.lastName,
             email: data.email,
             phone: data.phone,
             street: [data.street, data.apartment].filter(Boolean).join(", "),
@@ -420,14 +425,25 @@ export default function Checkout() {
             <section className="glass-card p-6 md:p-8 space-y-5">
               <h2 className="text-lg font-bold text-foreground">פרטי התקשרות</h2>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground/80">שם מלא *</label>
-                <Input
-                  {...register("fullName")}
-                  className="h-11"
-                  placeholder="שם מלא"
-                />
-                {errors.fullName && <p className="text-sm text-red-400">{errors.fullName.message}</p>}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground/80">שם פרטי *</label>
+                  <Input
+                    {...register("firstName")}
+                    className="h-11"
+                    placeholder="שם פרטי"
+                  />
+                  {errors.firstName && <p className="text-sm text-red-400">{errors.firstName.message}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground/80">שם משפחה *</label>
+                  <Input
+                    {...register("lastName")}
+                    className="h-11"
+                    placeholder="שם משפחה"
+                  />
+                  {errors.lastName && <p className="text-sm text-red-400">{errors.lastName.message}</p>}
+                </div>
               </div>
 
               <div className="space-y-1.5">
