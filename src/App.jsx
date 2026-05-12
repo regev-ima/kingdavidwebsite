@@ -20,6 +20,8 @@ import BlogPostPage from './pages/BlogPost';
 import FAQPage from './pages/FAQPage';
 import Contact from './pages/Contact';
 import Returns from './pages/Returns';
+import Shipping from './pages/Shipping';
+import Accessibility from './pages/Accessibility';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Reviews from './pages/Reviews';
@@ -64,6 +66,8 @@ const AuthenticatedApp = () => {
         <Route path="/FAQ" element={<FAQPage />} />
         <Route path="/Contact" element={<Contact />} />
         <Route path="/Returns" element={<Returns />} />
+        <Route path="/Shipping" element={<Shipping />} />
+        <Route path="/Accessibility" element={<Accessibility />} />
         <Route path="/Terms" element={<Terms />} />
         <Route path="/Privacy" element={<Privacy />} />
         <Route path="/Reviews" element={<Reviews />} />

@@ -75,11 +75,11 @@ export default function OrderSummary({ collapsibleOnMobile = true }) {
         <p className="text-[11px] text-muted-foreground/70 -mt-1">{shippingLabel}</p>
       )}
 
-      <p className="text-[11px] text-muted-foreground/60">
-        {isPickup
-          ? "*האיסוף בתיאום מראש, ימים א-ה בין השעות 10:00-16:00"
-          : "*המשלוחים אינם כוללים צפון/דרום רחוק"}
-      </p>
+      {isPickup && (
+        <p className="text-[11px] text-muted-foreground/60">
+          *האיסוף בתיאום מראש, ימים א-ה בין השעות 10:00-16:00
+        </p>
+      )}
 
       {cartSavings > 0 && (
         <div className="flex items-center justify-between text-sm rounded-lg px-3 py-2 bg-primary/[0.08] border border-primary/25 text-primary">

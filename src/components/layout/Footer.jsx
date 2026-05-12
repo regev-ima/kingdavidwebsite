@@ -112,10 +112,12 @@ export default function Footer() {
           <p className="text-foreground/30 text-xs font-light">
             &copy; {new Date().getFullYear()} King David מזרנים. כל הזכויות שמורות.
           </p>
-          <div className="flex gap-4 text-xs text-foreground/30 font-light">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground/30 font-light justify-center md:justify-start">
             <Link to="/Terms" className="hover:text-primary transition-colors">תנאי שימוש</Link>
             <Link to="/Privacy" className="hover:text-primary transition-colors">מדיניות פרטיות</Link>
             <Link to="/Returns" className="hover:text-primary transition-colors">ביטולים והחזרות</Link>
+            <Link to="/Shipping" className="hover:text-primary transition-colors">משלוחים והרכבה</Link>
+            <Link to="/Accessibility" className="hover:text-primary transition-colors">הצהרת נגישות</Link>
           </div>
         </div>
       </div>
