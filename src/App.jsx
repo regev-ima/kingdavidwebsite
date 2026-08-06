@@ -9,6 +9,7 @@ import { ThemeProvider } from '@/lib/ThemeContext';
 import { CartProvider } from '@/lib/CartContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from '@/components/layout/ScrollToTop';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
@@ -90,7 +91,11 @@ function App() {
             <CartProvider>
               <Router>
                 <ScrollToTop />
-                <AuthenticatedApp />
+                {/* Last-resort net: keeps a crash inside the chrome (navbar,
+                    footer, floating buttons) from blanking the whole site. */}
+                <ErrorBoundary>
+                  <AuthenticatedApp />
+                </ErrorBoundary>
               </Router>
               <Toaster />
             </CartProvider>

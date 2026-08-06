@@ -5,6 +5,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import WhatsAppButton from "./WhatsAppButton";
 import MattressFinderBot from "./MattressFinderBot";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function Layout() {
   const location = useLocation();
@@ -21,7 +22,10 @@ export default function Layout() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
         >
-          <Outlet />
+          {/* Keyed per route so navigating away clears a caught error. */}
+          <ErrorBoundary key={location.pathname + location.search}>
+            <Outlet />
+          </ErrorBoundary>
         </motion.div>
       </main>
       <Footer />
