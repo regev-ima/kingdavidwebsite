@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fallbackProducts } from "@/data/fallbackProducts";
 import { SectionDivider } from "@/components/ui/royal-ornament";
+import { computeEffectivePrice } from "@/lib/pricing";
 
 export default function FeaturedProducts() {
   const { data: apiProducts, isLoading } = useQuery({
@@ -68,7 +69,17 @@ export default function FeaturedProducts() {
             className="flex gap-6 animate-marquee group-hover:[animation-play-state:paused]"
             style={{ width: "max-content" }}
           >
-            {doubled.map((product, i) => (
+            {doubled.map((product, i) => {
+              // Same pricing path as ProductCard, so the carousel can never
+              // disagree with the shop grid — and never blows up on a product
+              // that has no priced variation (price comes back as null there).
+              const defaultVariation =
+                product?.variations?.find((v) => v.id === product?.default_variation_id) ||
+                product?.variations?.[0] ||
+                null;
+              const pricing = computeEffectivePrice(product, defaultVariation);
+
+              return (
               <Link
                 key={`${product.id}-${i}`}
                 to={`/ProductDetail?id=${product.id}`}
@@ -87,7 +98,7 @@ export default function FeaturedProducts() {
                         <span className="text-4xl font-sans-hebrew text-primary/20">KD</span>
                       </div>
                     )}
-                    {product.is_on_sale && (
+                    {pricing.isOnSaleNow && (
                       <Badge className="absolute top-3 right-3 bg-destructive text-destructive-foreground text-xs">מבצע</Badge>
                     )}
                   </div>
@@ -97,19 +108,22 @@ export default function FeaturedProducts() {
                       {product.name}
                     </h3>
                     <div className="flex items-center gap-2">
-                      {product.sale_price ? (
+                      {pricing.isOnSaleNow ? (
                         <>
-                          <span className="text-lg font-semibold text-primary">₪{product.sale_price.toLocaleString()}</span>
-                          <span className="text-sm text-muted-foreground line-through">₪{product.price.toLocaleString()}</span>
+                          <span className="text-lg font-semibold text-primary">₪{pricing.finalPrice.toLocaleString()}</span>
+                          <span className="text-sm text-muted-foreground line-through">₪{pricing.originalPrice.toLocaleString()}</span>
                         </>
+                      ) : pricing.finalPrice > 0 ? (
+                        <span className="text-lg font-semibold text-primary">₪{pricing.finalPrice.toLocaleString()}</span>
                       ) : (
-                        <span className="text-lg font-semibold text-primary">₪{product.price.toLocaleString()}</span>
+                        <span className="text-sm text-muted-foreground">צור קשר לתמחור</span>
                       )}
                     </div>
                   </div>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </div>
 

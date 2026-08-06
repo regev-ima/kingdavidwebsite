@@ -24,16 +24,18 @@ export default function SaleCountdown({ endsAt, variant = "full", onExpire }) {
     return () => clearInterval(intervalId);
   }, [endsAt, variant]);
 
-  if (!endsAt) return null;
-
-  const c = countdownTo(endsAt, now);
+  // Computed before the early return so the hooks below always run — a
+  // conditional hook here changes the hook order the moment `endsAt`
+  // appears or disappears, which throws and unmounts the whole tree.
+  const c = endsAt ? countdownTo(endsAt, now) : null;
+  const expired = c ? c.expired : false;
 
   useEffect(() => {
-    if (c.expired && typeof onExpire === "function") onExpire();
+    if (expired && typeof onExpire === "function") onExpire();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [c.expired]);
+  }, [expired]);
 
-  if (c.expired) return null;
+  if (!endsAt || expired) return null;
 
   if (variant === "compact") {
     return (
