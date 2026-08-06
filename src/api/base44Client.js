@@ -242,25 +242,118 @@ export function priceForAddon(addon, variation) {
   return Number(addon.final_price ?? addon.base_price ?? 0);
 }
 
+// The CRM and the storefront label categories differently. The CRM tags an
+// addon with a broad category ('bed' / 'מיטה' / 'מיטות'), while a product on
+// the website carries the narrow storefront tab it belongs to
+// ('מיטות יהודיות', 'מיטות זוגיות', ...). An exact string compare between the
+// two never matches, which is why bed addons ("הפרדה יהודית", "ארגז מצעים")
+// never reached a bed's product page.
+//
+// Both sides are therefore reduced to a family — 'bed' or 'mattress' — and a
+// broad tag matches every product in its family. Narrow tags still have to
+// match the product exactly, so "מיטות יהודיות" won't pull an addon onto a
+// designer bed.
+
+function normalizeLabel(value) {
+  return String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+const BED_WORDS = ['bed', 'beds', 'מיטה', 'מיטות', 'מיטת'];
+const MATTRESS_WORDS = ['mattress', 'mattresses', 'מזרן', 'מזרון', 'מזרנים', 'מזרונים', 'מזרני'];
+
+/** 'bed' | 'mattress' | null — the family a category label belongs to. */
+function categoryFamily(label) {
+  const n = normalizeLabel(label);
+  if (!n) return null;
+  const words = n.split(' ');
+  if (words.some((w) => BED_WORDS.includes(w))) return 'bed';
+  if (words.some((w) => MATTRESS_WORDS.includes(w))) return 'mattress';
+  return null;
+}
+
+/**
+ * True when a label names a whole family rather than one storefront tab —
+ * 'bed', 'מיטות', 'מיטה'. Those are the values the CRM tags addons with.
+ */
+function isBroadCategory(label) {
+  const n = normalizeLabel(label);
+  return Boolean(n) && (BED_WORDS.includes(n) || MATTRESS_WORDS.includes(n));
+}
+
+/**
+ * Coerce applicable_categories into a plain list of labels.
+ * Returns null when the addon declares no restriction at all — that is
+ * different from declaring a restriction that resolves to nothing.
+ */
+function toCategoryList(value) {
+  if (value == null) return null; // no restrictions declared
+  let v = value;
+  // The column is jsonb, but a text column holding JSON arrives as a string.
+  if (typeof v === 'string') {
+    const trimmed = v.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        v = JSON.parse(trimmed);
+      } catch {
+        // Not JSON — treat it as a comma-separated label list.
+        return trimmed.split(',').map((s) => s.trim()).filter(Boolean);
+      }
+    } else {
+      return trimmed.split(',').map((s) => s.trim()).filter(Boolean);
+    }
+  }
+  if (Array.isArray(v)) return v.filter(Boolean).map(String);
+  if (typeof v === 'object') {
+    const keys = Object.keys(v);
+    if (keys.length === 0) return null;
+    // { "מיטות": true, "מזרנים": false } -> only the enabled keys. An
+    // all-false object is a real restriction, so it stays an empty list.
+    return keys.filter((k) => k && v[k] !== false && v[k] !== null);
+  }
+  return [String(v)].filter(Boolean);
+}
+
 /**
  * Filter addons that apply to the given product.
- * Matches against `applicable_categories` (jsonb array) — falls back to
- * showing all addons if no categories are declared.
+ * Matches against `applicable_categories` (jsonb array), falling back to
+ * `categories` — the CRM populates one or the other depending on how the
+ * addon was created. No categories at all -> the addon shows everywhere.
  */
 export function addonsForProduct(addons, product) {
   if (!Array.isArray(addons) || !product) return [];
+
+  const productLabels = [
+    product.category,
+    product.category_raw,
+    product.bed_type_raw,
+    ...(Array.isArray(product.categories) ? product.categories : []),
+  ].filter(Boolean);
+  const productNormalized = new Set(productLabels.map(normalizeLabel));
+  const productFamilies = new Set(productLabels.map(categoryFamily).filter(Boolean));
+
   return addons.filter((addon) => {
-    const apc = addon.applicable_categories;
-    if (!apc) return true; // no restrictions -> show for all
-    const list = Array.isArray(apc) ? apc : (typeof apc === 'object' ? Object.keys(apc) : []);
-    if (list.length === 0) return true;
-    const productCategories = [
-      product.category,
-      product.category_raw,
-      product.bed_type_raw,
-      ...(Array.isArray(product.categories) ? product.categories : []),
-    ].filter(Boolean);
-    return list.some((c) => productCategories.includes(c));
+    const declared = toCategoryList(addon.applicable_categories);
+    const list = declared ?? toCategoryList(addon.categories);
+    if (list === null) return true; // no restrictions -> show for all
+    // An empty jsonb array is how the CRM stores "no restriction" too; only
+    // an object that disabled every one of its keys means "applies to none".
+    if (list.length === 0) {
+      const src = declared !== null ? addon.applicable_categories : addon.categories;
+      const isAllDisabledObject =
+        src && typeof src === 'object' && !Array.isArray(src) && Object.keys(src).length > 0;
+      return !isAllDisabledObject;
+    }
+
+    return list.some((raw) => {
+      const label = normalizeLabel(raw);
+      if (!label) return false;
+      if (productNormalized.has(label)) return true;
+      // A broad CRM tag ('מיטות') covers every storefront tab in its family
+      // ('מיטות יהודיות', 'מיטות זוגיות', ...).
+      if (isBroadCategory(label)) return productFamilies.has(categoryFamily(label));
+      return false;
+    });
   });
 }
 

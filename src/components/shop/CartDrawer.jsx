@@ -60,7 +60,15 @@ export default function CartDrawer({ open, onClose }) {
                 </div>
               ) : (
                 items.map((item, idx) => {
-                  const price = item.product.sale_price || item.product.price;
+                  // Same unit price the cart total is built from, so the lines
+                  // here add up to the subtotal below. `?? 0` keeps a product
+                  // with no priced variation from throwing on toLocaleString.
+                  const unitPrice = Number(
+                    item.unitPrice ?? item.product?.sale_price ?? item.product?.price ?? 0
+                  );
+                  const addons = Array.isArray(item.addons) ? item.addons : [];
+                  const addonsUnitPrice = addons.reduce((s, a) => s + Number(a.price || 0), 0);
+                  const price = unitPrice + addonsUnitPrice;
                   return (
                     <div key={idx} className="glass rounded-xl p-4">
                       <div className="flex gap-3">
@@ -79,6 +87,19 @@ export default function CartDrawer({ open, onClose }) {
                             {item.size && <span>מידה: {item.size}</span>}
                             {item.withStorage && <span> | עם ארגז מצעים</span>}
                           </p>
+                          {addons.length > 0 && (
+                            <ul className="mt-1 space-y-0.5">
+                              {addons.map((a) => (
+                                <li
+                                  key={a.id}
+                                  className="text-[11px] text-foreground/55 flex items-center justify-between gap-2"
+                                >
+                                  <span>+ {a.name}</span>
+                                  <span>₪{Number(a.price || 0).toLocaleString()}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                           <p className="text-xs text-muted-foreground/70 mt-0.5">
                             ₪{price.toLocaleString()} ליחידה
                           </p>
