@@ -1,0 +1,29 @@
+name: RPC column guard
+
+# The website RPCs are SECURITY DEFINER, so their declared output shape is the
+# only thing standing between an internal column and every visitor. This runs on
+# any change to a migration or to the guard itself.
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/checks/rpc-column-guard.mjs'
+      - '.github/workflows/rpc-column-guard.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/checks/rpc-column-guard.mjs'
+  workflow_dispatch:
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/checks/rpc-column-guard.mjs
