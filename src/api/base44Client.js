@@ -657,8 +657,86 @@ const extraChargeEntity = {
   },
 };
 
+// ---------------------------------------------------------------------
+// Bed configurator (bed_option_groups / bed_option_values)
+// ---------------------------------------------------------------------
+//
+// The CRM's bed questions, reached through website_get_bed_options(). The RPC
+// returns one flat row per (question, choice); this rebuilds the nesting the UI
+// needs and drops nothing else on the way.
+//
+// PRICES ARE ALREADY VAT-INCLUSIVE HERE. The RPC resolves both kinds of choice
+// — a manual price (stored gross) and one linked to an add-on (stored net,
+// grossed up in SQL) — to one convention, so this is the one price path on the
+// site that must NOT go through withVat(). Doing so would bill 18% twice.
+
+let bedOptionsCachePromise = null;
+
+async function loadBedOptions() {
+  if (!isSupabaseConfigured) return [];
+  if (!bedOptionsCachePromise) {
+    bedOptionsCachePromise = (async () => {
+      const { data, error } = await supabase.rpc('website_get_bed_options');
+      if (error) {
+        // A site whose CRM has not run the migration yet simply has no bed
+        // questions — the product page renders without them rather than
+        // breaking. Same posture as the products/addons caches.
+        console.error('[base44Client shim] website_get_bed_options failed:', error.message);
+        bedOptionsCachePromise = null;
+        return [];
+      }
+      const byGroup = new Map();
+      for (const row of data || []) {
+        if (!byGroup.has(row.group_id)) {
+          byGroup.set(row.group_id, {
+            id: row.group_id,
+            key: row.group_key,
+            label: row.group_label,
+            sort_order: row.group_sort_order,
+            skippable: row.skippable,
+            website_mode: row.website_mode,
+            depends_on_group_key: row.depends_on_group_key,
+            depends_on_value_key: row.depends_on_value_key,
+            values: [],
+          });
+        }
+        byGroup.get(row.group_id).values.push({
+          id: row.value_id,
+          key: row.value_key,
+          label: row.value_label,
+          price: Number(row.price) || 0, // gross already — see above
+          image_url: row.image_url,
+          sort_order: row.value_sort_order,
+          min_width_cm: row.min_width_cm,
+          max_width_cm: row.max_width_cm,
+        });
+      }
+      return [...byGroup.values()].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    })();
+  }
+  return bedOptionsCachePromise;
+}
+
+const bedOptionEntity = {
+  async list() {
+    return loadBedOptions();
+  },
+  async filter(filter) {
+    const rows = await loadBedOptions();
+    return applyClientSideFilter(rows, filter);
+  },
+  async get(id) {
+    const rows = await loadBedOptions();
+    return rows.find((r) => r.id === id) || null;
+  },
+  async create() {
+    throw new Error('[base44Client shim] BedOption.create is disabled on the website — use the CRM.');
+  },
+};
+
 const ENTITIES = {
   Product: productEntity,
+  BedOption: bedOptionEntity,
   Order: orderEntity,
   Addon: addonEntity,
   ProductAddon: addonEntity, // legacy alias
