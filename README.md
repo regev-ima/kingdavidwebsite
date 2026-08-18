@@ -69,6 +69,32 @@ handles deep links.
 
 ---
 
+## Prices & VAT (מע"מ)
+
+The kcrm prices its catalogue **net** — `product_variations.base_price` /
+`final_price`, `product_addons` and the per-size override tables are all
+pre-VAT. The storefront shows what the customer pays, so every CRM price is
+grossed up **once**, at the data boundary in
+[`src/api/base44Client.js`](./src/api/base44Client.js), using
+[`src/lib/vat.js`](./src/lib/vat.js). Product cards, the product page, the
+cart, checkout and the order written back to the CRM all inherit the
+VAT-inclusive figure — none of them do VAT maths of their own.
+
+- Rate: **18%** (Israel, since 2025-01-01). Override with `VITE_VAT_RATE`.
+- A row's own `vat_percent` wins over the site rate when the CRM supplies one
+  (`product_addons` already has the column; run
+  [`020_variation_vat_percent.sql`](./supabase/migrations/020_variation_vat_percent.sql)
+  to expose it for variations too).
+- Shipping rules (`extra_charges`) are entered as customer-facing prices and
+  are left alone — set `VITE_VAT_INCLUDE_SHIPPING=true` if that ever changes.
+- The static `src/data/fallbackProducts.js` list is already gross and is not
+  touched.
+
+If the CRM is ever switched to storing gross prices, set `VITE_VAT_RATE=0`
+rather than editing components.
+
+---
+
 ## Order flow
 
 1. Customer fills `Checkout.jsx`

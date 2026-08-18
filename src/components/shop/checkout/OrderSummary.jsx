@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ChevronDown, ChevronUp, Tag } from "lucide-react";
 import { useCart } from "@/lib/CartContext";
 import { optimizeImage } from "@/lib/image";
+import { VAT_INCLUDED_LABEL } from "@/lib/vat";
 
 export default function OrderSummary({ collapsibleOnMobile = true }) {
   const {
@@ -95,6 +96,7 @@ export default function OrderSummary({ collapsibleOnMobile = true }) {
         <span>סה"כ</span>
         <span className="text-primary">₪{orderTotal.toLocaleString()}</span>
       </div>
+      <p className="text-[11px] text-muted-foreground/70 text-left">{VAT_INCLUDED_LABEL}</p>
     </div>
   );
 

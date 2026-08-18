@@ -17,6 +17,7 @@ import { buildHypIframeUrl, isHypConfigured } from "@/lib/hyp";
 import { sendOrderEmail } from "@/lib/orderEmail";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { vatPortionOf } from "@/lib/vat";
 
 const PAYMENT_METHODS = [
   {
@@ -306,7 +307,9 @@ export default function Checkout() {
       extras,
       subtotal: payload.subtotal,
       discount_total: 0,
-      vat_amount: 0,
+      // Every price on the site is VAT-inclusive, so the order total is
+      // gross and the VAT is the portion contained in it.
+      vat_amount: vatPortionOf(payload.total),
       total: payload.total,
       notes_sales: data.notes || null,
     };
