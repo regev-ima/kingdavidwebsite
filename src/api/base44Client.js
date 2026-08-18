@@ -15,6 +15,7 @@
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { fallbackProducts } from '@/data/fallbackProducts';
+import { withVat, VAT_APPLIES_TO_SHIPPING } from '@/lib/vat';
 
 // ---------------------------------------------------------------------
 // Transformers — CRM shape -> UI shape
@@ -107,12 +108,29 @@ function transformProduct(row) {
     return (a.length_cm || 0) - (b.length_cm || 0);
   });
 
+  // The CRM prices its catalogue NET. Gross every variation up here —
+  // before any sale maths — so a price is VAT-inclusive from the moment
+  // it enters the app, and so the shim and src/lib/pricing.js (which
+  // re-derives the same sale in the UI) work off identical numbers.
+  variations = variations.map((v) => ({
+    ...v,
+    base_price: withVat(v.base_price, v.vat_percent),
+    final_price: withVat(v.final_price, v.vat_percent),
+  }));
+
+  // A fixed-amount discount is stored net too, so it has to be grossed
+  // up alongside the prices it is subtracted from. A percentage needs
+  // no conversion.
+  const discountValue =
+    row.discount_type === 'amount' ? withVat(row.discount_value) : row.discount_value;
+  const pricedRow = { ...row, discount_value: discountValue };
+
   // Apply product-level sale, if any. This replaces each variation's
   // final_price with the discounted value so the rest of the UI keeps
   // using its existing base_price / final_price shape.
   const { variations: saleVariations, saleActive } = applyProductSale(
     variations,
-    row,
+    pricedRow,
     Date.now()
   );
   variations = saleVariations;
@@ -164,6 +182,9 @@ function transformProduct(row) {
     category_raw: row.category,
     bed_type_raw: row.bed_type,
     sale_ends_at: row.sale_ends_at || null,
+    // Gross value, matching the VAT-inclusive prices above — pricing.js
+    // subtracts it from base_price when it recomputes the sale.
+    discount_value: discountValue,
   };
 }
 
@@ -210,8 +231,12 @@ async function loadAllAddons() {
       }
       return (data || []).map((row) => ({
         ...row,
-        // Prefer VAT-inclusive price when present.
-        effective_base_price: Number(row.final_price ?? row.base_price ?? 0),
+        // VAT-inclusive, like every other price the storefront shows.
+        // priceForAddon() below grosses up the per-size overrides too.
+        effective_base_price: withVat(
+          Number(row.final_price ?? row.base_price ?? 0),
+          row.vat_percent
+        ),
       }));
     })();
   }
@@ -225,11 +250,15 @@ async function loadAllAddons() {
  *   2. size_prices jsonb by variation.name ("160x200") or variation.id
  *   3. addon.final_price
  *   4. addon.base_price
+ *
+ * Every one of those sources is a net CRM price, so the result is
+ * grossed up here — this is the only path the UI uses to price an addon.
  */
 export function priceForAddon(addon, variation) {
   if (!addon) return 0;
+  const gross = (net) => withVat(Number(net), addon.vat_percent);
   if (variation?.id && addon.variation_prices && addon.variation_prices[variation.id] != null) {
-    return Number(addon.variation_prices[variation.id]);
+    return gross(addon.variation_prices[variation.id]);
   }
   if (variation && addon.size_prices && typeof addon.size_prices === 'object') {
     const byId = variation.id && addon.size_prices[variation.id];
@@ -237,9 +266,9 @@ export function priceForAddon(addon, variation) {
     const byDims = variation.width_cm && variation.length_cm &&
       addon.size_prices[`${variation.width_cm}x${variation.length_cm}`];
     const match = byId ?? byName ?? byDims;
-    if (match != null) return Number(match);
+    if (match != null) return gross(match);
   }
-  return Number(addon.final_price ?? addon.base_price ?? 0);
+  return gross(addon.final_price ?? addon.base_price ?? 0);
 }
 
 // The CRM and the storefront label categories differently. The CRM tags an
@@ -611,7 +640,11 @@ const extraChargeEntity = {
       console.warn('[base44Client shim] extra_charges fetch failed:', error.message);
       return [];
     }
-    return data || [];
+    // The dashboard's shipping rules are entered as customer-facing
+    // prices, so they are left alone by default. Set
+    // VITE_VAT_INCLUDE_SHIPPING=true if they ever become net figures.
+    if (!VAT_APPLIES_TO_SHIPPING) return data || [];
+    return (data || []).map((row) => ({ ...row, cost: withVat(row.cost) }));
   },
   async filter() {
     return [];

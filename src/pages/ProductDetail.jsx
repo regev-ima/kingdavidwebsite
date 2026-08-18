@@ -18,6 +18,7 @@ import SaleCountdown from "@/components/shop/SaleCountdown";
 import HardnessScale from "@/components/shop/HardnessScale";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { priceForAddon, addonsForProduct } from "@/api/base44Client";
+import { VAT_INCLUDED_LABEL } from "@/lib/vat";
 import { optimizeImage, optimizeSrcSet } from "@/lib/image";
 
 // Estimated delivery date (14 business days from now, updated)
@@ -548,6 +549,12 @@ export default function ProductDetail() {
                   <span className="text-lg text-muted-foreground">צור קשר לתמחור</span>
                 )}
               </div>
+
+              {/* Prices arrive from the CRM net and are grossed up in the
+                  base44 shim — say so, as the terms page promises. */}
+              {pricing.finalPrice > 0 && (
+                <p className="text-xs text-muted-foreground">{VAT_INCLUDED_LABEL}</p>
+              )}
 
               {/* Sale hasn't started yet — soft note */}
               {pricing.saleNotStarted && pricing.saleStartsAt && (

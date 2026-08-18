@@ -37,8 +37,11 @@
 --   product_id    uuid -> products(id)
 --   sku           text
 --   name          text       -- e.g. "180x200"
---   base_price    numeric    -- list price
---   final_price   numeric    -- price actually charged (handles discounts)
+--   base_price    numeric    -- list price, NET of VAT
+--   final_price   numeric    -- price actually charged, NET of VAT
+--   vat_percent   numeric    -- optional per-variation rate; the website
+--                            -- falls back to VITE_VAT_RATE (18) when absent.
+--                            -- Exposed by migration 020 if the column exists.
 --   width_cm      numeric
 --   length_cm     numeric
 --   is_active     boolean
@@ -60,7 +63,8 @@
 --                                --   payment_method, website_notes }
 --   subtotal            numeric
 --   discount_total      numeric (0 from website)
---   vat_amount          numeric (0 from website)
+--   vat_amount          numeric  -- the VAT contained in `total` (site
+--                                -- prices are gross); see src/lib/vat.js
 --   total               numeric
 --   payment_status      text     -- "pending"
 --   production_status   text     -- "new"
