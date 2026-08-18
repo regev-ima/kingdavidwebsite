@@ -34,6 +34,20 @@ const LOGO_URL =
   "https://media.base44.com/images/public/69ba8e801b8d893fdd14efd0/26ed85e1e_Logo-2025-03.png";
 
 function renderEmailHtml(order: any): string {
+  // Addons picked on the product page. Their price is already inside
+  // lineTotal, so they are listed for clarity — the customer has to see
+  // *what* they ordered, not just a bigger number.
+  const addonLines = (addons: any) =>
+    (Array.isArray(addons) ? addons : [])
+      .filter((a: any) => a && a.name)
+      .map(
+        (a: any) => `
+            <div dir="rtl" style="font-size:12px;color:#666;margin-top:2px;">
+              + ${escapeHtml(a.name)}${Number(a.price) > 0 ? " · " + money(a.price) : ""}
+            </div>`,
+      )
+      .join("");
+
   const items = (order.items || [])
     .map(
       (it: any) => `
@@ -42,7 +56,7 @@ function renderEmailHtml(order: any): string {
             <div style="font-weight:600;color:#111;">${escapeHtml(it.name || "")}</div>
             <div dir="rtl" style="font-size:12px;color:#666;margin-top:2px;">
               כמות: ${it.quantity}${it.size ? " · מידה: " + escapeHtml(it.size) : ""}${it.withStorage ? " · כולל ארגז מצעים" : ""}
-            </div>
+            </div>${addonLines(it.addons)}
           </td>
           <td style="padding:10px 12px;border-bottom:1px solid #eee;text-align:left;white-space:nowrap;font-weight:600;color:#111;">
             ${money(it.lineTotal)}

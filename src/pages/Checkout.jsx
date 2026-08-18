@@ -158,6 +158,16 @@ export default function Checkout() {
                           {item.withStorage && <>כולל ארגז מצעים · </>}
                           כמות: {item.quantity}
                         </p>
+                        {Array.isArray(item.addons) && item.addons.length > 0 && (
+                          <ul className="mt-1 space-y-0.5">
+                            {item.addons.map((a) => (
+                              <li key={a.id || a.name} className="text-xs text-foreground/55">
+                                + {a.name}
+                                {Number(a.price) > 0 && ` · ₪${Number(a.price).toLocaleString()}`}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
                       <span className="font-semibold text-foreground whitespace-nowrap">
                         ₪{Number(item.lineTotal).toLocaleString()}
@@ -248,6 +258,13 @@ export default function Checkout() {
       if (item.size) msg += ` (${item.size})`;
       if (item.withStorage) msg += ` + ארגז מצעים`;
       msg += ` x${item.quantity} = ₪${item.lineTotal.toLocaleString()}\n`;
+      // The addons are already inside lineTotal — list them so the rep
+      // knows *what* was ordered, not just what it cost.
+      (item.addons || []).forEach((a) => {
+        if (!a?.name) return;
+        const price = Number(a.price || 0);
+        msg += `   + ${a.name}${price > 0 ? ` (₪${price.toLocaleString()})` : ""}\n`;
+      });
     });
     msg += `\n*סכום ביניים:* ₪${payload.subtotal.toLocaleString()}`;
     msg += `\n*${isPickup ? "איסוף עצמי" : "משלוח"}:* ${isPickup ? "ללא עלות" : `₪${payload.shipping}`}`;
