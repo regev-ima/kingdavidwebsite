@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>דחיסת תמונות מוצרים</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; max-width: 720px; margin: 40px auto; padding: 20px; background: #fafafa; color: #1a1a1a; }
+  h1 { font-size: 22px; margin-bottom: 8px; }
+  p { line-height: 1.6; color: #444; }
+  .drop {
+    border: 2px dashed #999;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    background: white;
+    margin: 20px 0;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .drop.over { border-color: #c9a45a; background: #fff8eb; }
+  .drop strong { display: block; font-size: 18px; margin-bottom: 8px; }
+  .drop small { color: #666; }
+  input[type=file] { display: none; }
+  .row { display: flex; gap: 10px; margin: 8px 0; flex-wrap: wrap; align-items: center; }
+  label.ctl { font-size: 14px; color: #555; display: flex; gap: 6px; align-items: center; }
+  label.ctl input { width: 80px; padding: 4px 8px; }
+  button {
+    padding: 10px 18px; border: 0; border-radius: 8px;
+    background: #c9a45a; color: white; font-weight: 600; font-size: 14px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  pre { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; font-size: 12px; max-height: 280px; overflow: auto; direction: ltr; text-align: left; }
+  .ok { color: #2c7a3a; font-weight: 600; }
+  .stat { background: #f4f4f4; border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+  ol { padding-right: 20px; }
+</style>
+</head>
+<body>
+<h1>דחיסת תמונות מוצרים</h1>
+<p>מקטין כל תמונה ל‑1600px רוחב מקסימלי + JPEG q=82, שומר על מבנה התיקיות והשמות. תוצאה: התמונות יקטנו פי 10–20.</p>
+
+<ol>
+  <li>בחר את התיקייה <code>product-images-renamed</code> שכבר חולצה אצלך.</li>
+  <li>הכלי ייצור ZIP חדש בשם <code>product-images-compressed.zip</code>.</li>
+  <li>פתח אותו ועלה את התיקיות שוב ל‑bucket <code>product-images</code> ב‑Supabase. וודא ש‑Overwrite מסומן (אם הדפדפן שואל).</li>
+</ol>
+
+<div class="row">
+  <label class="ctl">רוחב מקסימלי (px): <input id="maxw" type="number" value="1600" min="400" max="4000" /></label>
+  <label class="ctl">איכות JPEG: <input id="quality" type="number" value="82" min="50" max="95" /></label>
+</div>
+
+<label class="drop" id="drop">
+  <strong>בחר את תיקיית התמונות</strong>
+  <small>או גרור אותה לכאן</small>
+  <input id="picker" type="file" webkitdirectory directory multiple />
+</label>
+
+<div class="row">
+  <button id="run" disabled>דחוס והורד ZIP</button>
+</div>
+
+<div id="status"></div>
+<pre id="log"></pre>
+
+<script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+const drop = document.getElementById('drop');
+const picker = document.getElementById('picker');
+const runBtn = document.getElementById('run');
+const status = document.getElementById('status');
+const log = document.getElementById('log');
+const maxwInput = document.getElementById('maxw');
+const qualityInput = document.getElementById('quality');
+
+let chosenFiles = [];
+
+function pickFiles(files) {
+  chosenFiles = Array.from(files).filter((f) =>
+    /\.(jpe?g|png|webp|avif|gif)$/i.test(f.name)
+  );
+  status.innerHTML = `<p>נבחרו <strong>${chosenFiles.length}</strong> תמונות (${(chosenFiles.reduce((s, f) => s + f.size, 0) / (1024 * 1024)).toFixed(1)}MB).</p>`;
+  runBtn.disabled = chosenFiles.length === 0;
+}
+
+picker.addEventListener('change', (e) => pickFiles(e.target.files));
+
+drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  drop.classList.remove('over');
+  const items = e.dataTransfer.items;
+  const files = [];
+  async function walk(entry, path = '') {
+    if (entry.isFile) {
+      const file = await new Promise((res) => entry.file(res));
+      Object.defineProperty(file, 'webkitRelativePath', { value: path + entry.name });
+      files.push(file);
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const entries = await new Promise((res) => reader.readEntries(res));
+      for (const ent of entries) await walk(ent, path + entry.name + '/');
+    }
+  }
+  for (const item of items) {
+    const entry = item.webkitGetAsEntry?.();
+    if (entry) await walk(entry);
+  }
+  pickFiles(files);
+});
+
+async function compressOne(file, maxWidth, quality) {
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(1, maxWidth / bmp.width);
+  const w = Math.round(bmp.width * scale);
+  const h = Math.round(bmp.height * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(bmp, 0, 0, w, h);
+  bmp.close?.();
+  // Always output JPEG (smaller for photos). For PNGs that have alpha,
+  // alpha is dropped — fine for product shots that aren't transparent.
+  const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', quality / 100));
+  return blob;
+}
+
+runBtn.addEventListener('click', async () => {
+  runBtn.disabled = true;
+  log.textContent = '';
+  const maxW = parseInt(maxwInput.value, 10);
+  const q = parseInt(qualityInput.value, 10);
+
+  const zip = new JSZip();
+  let originalBytes = 0;
+  let compressedBytes = 0;
+  let i = 0;
+
+  for (const file of chosenFiles) {
+    i += 1;
+    status.innerHTML = `<p>דוחס... ${i}/${chosenFiles.length} (${file.webkitRelativePath})</p>`;
+    try {
+      const blob = await compressOne(file, maxW, q);
+      const path = file.webkitRelativePath.split('/').slice(1).join('/');
+      // Force .jpg extension since we always re-encode as JPEG.
+      const newPath = path.replace(/\.(jpe?g|png|webp|avif|gif)$/i, '.jpg');
+      zip.file(newPath, blob);
+      originalBytes += file.size;
+      compressedBytes += blob.size;
+      log.textContent += `${path}  ${(file.size/1024).toFixed(0)}KB -> ${(blob.size/1024).toFixed(0)}KB\n`;
+    } catch (err) {
+      log.textContent += `FAILED ${file.webkitRelativePath}: ${err.message}\n`;
+    }
+  }
+
+  status.innerHTML = `<p>אורז ZIP...</p>`;
+  const out = await zip.generateAsync({ type: 'blob' }, (m) => {
+    status.innerHTML = `<p>אורז... ${Math.round(m.percent)}%</p>`;
+  });
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(out);
+  a.download = 'product-images-compressed.zip';
+  a.click();
+
+  const ratio = ((1 - compressedBytes / originalBytes) * 100).toFixed(0);
+  status.innerHTML = `<p class="ok">בוצע!</p>
+    <p class="stat">לפני: <b>${(originalBytes/1024/1024).toFixed(1)}MB</b> · אחרי: <b>${(compressedBytes/1024/1024).toFixed(1)}MB</b> · חיסכון: <b>${ratio}%</b></p>
+    <p>פתח את ה‑ZIP ועלה את התיקיות חזרה לתוך ה‑bucket <code>product-images</code> ב‑Supabase. זה ידרוס את הקבצים הקודמים בעלי אותם שמות.</p>`;
+  runBtn.disabled = false;
+});
+</script>
+</body>
+</html>

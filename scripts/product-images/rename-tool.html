@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>שינוי שמות תמונות מוצרים → ASCII</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; max-width: 720px; margin: 40px auto; padding: 20px; background: #fafafa; color: #1a1a1a; }
+  h1 { font-size: 22px; margin-bottom: 8px; }
+  p { line-height: 1.6; color: #444; }
+  .drop {
+    border: 2px dashed #999;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    background: white;
+    margin: 20px 0;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .drop.over { border-color: #c9a45a; background: #fff8eb; }
+  .drop strong { display: block; font-size: 18px; margin-bottom: 8px; }
+  .drop small { color: #666; }
+  input[type=file] { display: none; }
+  .row { display: flex; gap: 10px; margin: 8px 0; }
+  button {
+    padding: 10px 18px; border: 0; border-radius: 8px;
+    background: #c9a45a; color: white; font-weight: 600; font-size: 14px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  pre { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; font-size: 12px; max-height: 280px; overflow: auto; direction: ltr; text-align: left; }
+  .ok { color: #2c7a3a; font-weight: 600; }
+  .err { color: #c2272d; font-weight: 600; }
+  ol { padding-right: 20px; }
+</style>
+</head>
+<body>
+<h1>שינוי שמות תמונות מוצרים</h1>
+<p>הכלי הזה לוקח תיקייה עם תיקיות-משנה (תיקייה לכל מוצר), משנה את שמות התיקיות והקבצים ל‑ASCII בלבד, ומוריד ZIP חדש שמוכן להעלאה ל‑Supabase Storage.</p>
+
+<ol>
+  <li>בחר את התיקייה הראשית עם תיקיות המוצרים (זאת שחילצת מ‑Drive).</li>
+  <li>הכלי ייצור ZIP חדש בשם <code>product-images-renamed.zip</code>.</li>
+  <li>פתח את ה‑ZIP, ועלה את כל התיקיות לתוך bucket ה‑<code>product-images</code> ב‑Supabase Dashboard.</li>
+  <li>שלח לי גם את <code>mapping.json</code> שיירד יחד עם ה‑ZIP — אני צריך אותו כדי לקשר תיקייה למוצר.</li>
+</ol>
+
+<label class="drop" id="drop">
+  <strong>בחר את תיקיית המוצרים</strong>
+  <small>או גרור אותה לכאן</small>
+  <input id="picker" type="file" webkitdirectory directory multiple />
+</label>
+
+<div class="row">
+  <button id="run" disabled>שנה שמות והורד ZIP</button>
+</div>
+
+<div id="status"></div>
+<pre id="log"></pre>
+
+<script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+const drop = document.getElementById('drop');
+const picker = document.getElementById('picker');
+const runBtn = document.getElementById('run');
+const status = document.getElementById('status');
+const log = document.getElementById('log');
+
+let chosenFiles = [];
+
+function pickFiles(files) {
+  chosenFiles = Array.from(files);
+  status.innerHTML = `<p>נבחרו <strong>${chosenFiles.length}</strong> קבצים.</p>`;
+  runBtn.disabled = chosenFiles.length === 0;
+}
+
+picker.addEventListener('change', (e) => pickFiles(e.target.files));
+
+drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  drop.classList.remove('over');
+  const items = e.dataTransfer.items;
+  const files = [];
+  async function walk(entry, path = '') {
+    if (entry.isFile) {
+      const file = await new Promise((res) => entry.file(res));
+      Object.defineProperty(file, 'webkitRelativePath', { value: path + entry.name });
+      files.push(file);
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const entries = await new Promise((res) => reader.readEntries(res));
+      for (const ent of entries) await walk(ent, path + entry.name + '/');
+    }
+  }
+  for (const item of items) {
+    const entry = item.webkitGetAsEntry?.();
+    if (entry) await walk(entry);
+  }
+  pickFiles(files);
+});
+
+// Slugify a folder name. The Drive convention is "<English> - <Hebrew>".
+// Take the part before " - " when present; otherwise, transliterate Hebrew to a
+// readable ASCII fallback (or just strip non-ASCII).
+function slugifyFolder(name) {
+  let base = name;
+  const dash = name.split(' - ');
+  if (dash.length > 1 && /[A-Za-z0-9]/.test(dash[0])) {
+    base = dash[0];
+  }
+  // Strip non-ASCII; collapse spaces -> hyphen.
+  base = base.normalize('NFKD').replace(/[^\x20-\x7E]/g, '').trim();
+  base = base.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  return base || 'product';
+}
+
+function extension(name) {
+  const m = name.match(/\.[a-z0-9]+$/i);
+  return m ? m[0].toLowerCase() : '';
+}
+
+runBtn.addEventListener('click', async () => {
+  runBtn.disabled = true;
+  log.textContent = '';
+  status.innerHTML = '<p>בונה ZIP...</p>';
+
+  // Group by top-level subfolder.
+  const groups = new Map();   // folderRaw -> [File...]
+  for (const f of chosenFiles) {
+    const path = f.webkitRelativePath;
+    const parts = path.split('/');
+    if (parts.length < 3) continue; // need root/folder/file
+    const folder = parts[1];
+    if (!groups.has(folder)) groups.set(folder, []);
+    groups.get(folder).push(f);
+  }
+
+  // Resolve unique slugs.
+  const slugCounts = new Map();
+  const folderToSlug = new Map();
+  for (const folder of groups.keys()) {
+    let slug = slugifyFolder(folder);
+    const n = (slugCounts.get(slug) || 0) + 1;
+    slugCounts.set(slug, n);
+    if (n > 1) slug = `${slug}-${n}`;
+    folderToSlug.set(folder, slug);
+  }
+
+  const zip = new JSZip();
+  const mapping = {};
+  let imageCount = 0;
+  for (const [folder, files] of groups) {
+    const slug = folderToSlug.get(folder);
+    mapping[slug] = { drive_folder: folder, files: [] };
+    // Sort files for deterministic numbering.
+    files.sort((a, b) => a.name.localeCompare(b.name));
+    let idx = 1;
+    for (const file of files) {
+      const ext = extension(file.name);
+      if (!/\.(jpe?g|png|webp|avif|gif)$/i.test(ext)) {
+        log.textContent += `  skip (not image): ${file.webkitRelativePath}\n`;
+        continue;
+      }
+      const newName = `${idx}${ext}`;
+      mapping[slug].files.push({ original: file.name, renamed: newName });
+      const buf = await file.arrayBuffer();
+      zip.file(`${slug}/${newName}`, buf);
+      imageCount += 1;
+      idx += 1;
+    }
+    log.textContent += `${folder}\n  -> ${slug}/ (${mapping[slug].files.length} files)\n`;
+  }
+
+  zip.file('mapping.json', JSON.stringify(mapping, null, 2));
+
+  status.innerHTML = `<p>אורז ZIP (${imageCount} תמונות, ${groups.size} תיקיות)...</p>`;
+  const blob = await zip.generateAsync({ type: 'blob' }, (m) => {
+    status.innerHTML = `<p>אורז... ${Math.round(m.percent)}%</p>`;
+  });
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'product-images-renamed.zip';
+  a.click();
+
+  status.innerHTML = `<p class="ok">בוצע!</p>
+    <p>הורד ZIP בשם <code>product-images-renamed.zip</code>. פתח אותו ועלה את התיקיות לתוך ה‑bucket <code>product-images</code> ב‑Supabase. שלח לי גם את <code>mapping.json</code> שבתוך ה‑ZIP.</p>`;
+  runBtn.disabled = false;
+});
+</script>
+</body>
+</html>

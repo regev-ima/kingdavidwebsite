@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>הכנת CSV לידים לייבוא</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; max-width: 760px; margin: 30px auto; padding: 16px; background: #fafafa; color: #1a1a1a; }
+  h1 { font-size: 22px; margin-bottom: 8px; }
+  p { line-height: 1.6; color: #444; }
+  .drop {
+    border: 2px dashed #999;
+    border-radius: 12px;
+    padding: 30px 20px;
+    text-align: center;
+    background: white;
+    margin: 16px 0;
+    cursor: pointer;
+  }
+  .drop.over { border-color: #c9a45a; background: #fff8eb; }
+  input[type=file] { display: none; }
+  button {
+    padding: 10px 18px; border: 0; border-radius: 8px;
+    background: #c9a45a; color: white; font-weight: 600; font-size: 14px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  pre { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 12px; max-height: 200px; overflow: auto; direction: ltr; text-align: left; }
+  .ok { color: #2c7a3a; font-weight: 600; }
+  .warn { color: #b3801b; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 8px 0; }
+  td, th { border: 1px solid #e0e0e0; padding: 4px 8px; text-align: right; }
+  th { background: #f4f4f4; }
+</style>
+</head>
+<body>
+<h1>הכנת CSV לידים לייבוא</h1>
+<p>הקובץ המקורי ממערכת ה‑CRM הקודמת מכיל ~80 עמודות. הכלי הזה לוקח רק את 15 העמודות שאנחנו צריכים, נותן להן שמות באנגלית שמתאימים לטבלת ה‑staging ב‑Supabase, ומוריד CSV מסודר.</p>
+
+<label class="drop" id="drop">
+  <strong>בחר קובץ CSV/TSV</strong><br>
+  <small>או גרור אותו לכאן</small>
+  <input id="picker" type="file" accept=".csv,.tsv,.txt" />
+</label>
+
+<div id="status"></div>
+<div id="preview"></div>
+
+<button id="run" disabled>הורד CSV מסודר</button>
+
+<pre id="log"></pre>
+
+<script>
+const COLUMN_MAP = {
+  'lead.id': 'raw_unique_id',
+  'איש קשר': 'raw_full_name',
+  'מנהל תיק': 'raw_account_manager',
+  'מקור הגעה': 'raw_source',
+  'מספר טלפון': 'raw_phone',
+  'שם מודעה': 'raw_ad_name',
+  'סטטוס': 'raw_status',
+  'תאריך יצירה': 'raw_created_date',
+  'gclid': 'raw_gclid',
+  'lead.mail': 'raw_email',
+  "[[Lead.cf name='td_ga_campaign']]": 'raw_utm_campaign',
+  '[[Lead.city]]': 'raw_city',
+  '[[Lead.address]]': 'raw_address',
+  '[[Lead.landingPage]]': 'raw_landing_page',
+  '[[Lead.remarks]]': 'raw_notes',
+};
+
+const drop = document.getElementById('drop');
+const picker = document.getElementById('picker');
+const runBtn = document.getElementById('run');
+const status = document.getElementById('status');
+const preview = document.getElementById('preview');
+const log = document.getElementById('log');
+
+let parsed = null; // { headers, rows, mapping }
+
+picker.addEventListener('change', (e) => loadFile(e.target.files[0]));
+drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', (e) => {
+  e.preventDefault(); drop.classList.remove('over');
+  loadFile(e.dataTransfer.files[0]);
+});
+
+// Detect delimiter (tab vs comma) from the header line.
+function detectDelimiter(headerLine) {
+  const tabs = (headerLine.match(/\t/g) || []).length;
+  const commas = (headerLine.match(/,/g) || []).length;
+  return tabs > commas ? '\t' : ',';
+}
+
+// Minimal CSV parser that handles quoted fields with commas + escapes.
+function parseLine(line, delim) {
+  const out = [];
+  let cur = '';
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else cur += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === delim) { out.push(cur); cur = ''; }
+      else cur += c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+async function loadFile(file) {
+  if (!file) return;
+  status.innerHTML = `<p>קורא ${file.name} (${(file.size/1024/1024).toFixed(1)}MB)...</p>`;
+  let text = await file.text();
+  // Strip UTF-8 BOM if present.
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+  const allLines = text.split(/\r?\n/);
+  const headerLine = allLines[0];
+  const delim = detectDelimiter(headerLine);
+  const headers = parseLine(headerLine, delim).map((h) => h.trim());
+
+  // Match each desired output column to a CSV header, by exact match first.
+  const mapping = {};
+  const missing = [];
+  for (const [csvName, outName] of Object.entries(COLUMN_MAP)) {
+    const idx = headers.indexOf(csvName);
+    if (idx === -1) missing.push(csvName);
+    else mapping[outName] = idx;
+  }
+
+  parsed = { delim, headers, allLines, mapping, missing };
+
+  // Build preview table.
+  const table = ['<table><tr><th>עמודה ב‑staging</th><th>נמצאה ב‑CSV?</th></tr>'];
+  for (const [csvName, outName] of Object.entries(COLUMN_MAP)) {
+    const found = csvName in headers || mapping[outName] !== undefined;
+    table.push(`<tr><td><code>${outName}</code><br><small>${csvName}</small></td><td>${mapping[outName] !== undefined ? '✅' : '<span class="warn">❌ חסר</span>'}</td></tr>`);
+  }
+  table.push('</table>');
+  preview.innerHTML = table.join('');
+
+  status.innerHTML = `<p>נמצאו <strong>${allLines.length - 1}</strong> שורות (delimiter: ${delim === '\t' ? 'tab' : 'comma'}).</p>`;
+  if (missing.length) {
+    status.innerHTML += `<p class="warn">חסרות עמודות במקור — הן ייכתבו ריקות:<br><small>${missing.join(', ')}</small></p>`;
+  }
+  runBtn.disabled = false;
+}
+
+// Encode one CSV value: quote if contains , " or newline; double internal quotes.
+function csvField(v) {
+  if (v == null) return '';
+  const s = String(v);
+  if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+runBtn.addEventListener('click', () => {
+  if (!parsed) return;
+  runBtn.disabled = true;
+  log.textContent = '';
+
+  const outCols = Object.values(COLUMN_MAP);
+  const out = [outCols.join(',')];
+  let kept = 0;
+  let skipped = 0;
+
+  for (let i = 1; i < parsed.allLines.length; i++) {
+    const line = parsed.allLines[i];
+    if (!line || !line.trim()) { skipped++; continue; }
+    const cells = parseLine(line, parsed.delim);
+    const row = outCols.map((col) => {
+      const idx = parsed.mapping[col];
+      return idx === undefined ? '' : csvField(cells[idx] || '');
+    });
+    out.push(row.join(','));
+    kept++;
+  }
+
+  const csvBlob = new Blob([
+    '﻿', // BOM so Excel/Supabase pick up UTF-8 reliably
+    out.join('\n'),
+  ], { type: 'text/csv;charset=utf-8' });
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(csvBlob);
+  a.download = 'leads_import_clean.csv';
+  a.click();
+
+  status.innerHTML = `<p class="ok">בוצע!</p>
+    <p>הורד <code>leads_import_clean.csv</code> עם ${kept} שורות (${skipped} שורות ריקות דולגו).</p>
+    <p>עכשיו ב‑Supabase Table Editor → <code>leads_import</code> → Import data via CSV → העלה את הקובץ הזה.</p>`;
+  runBtn.disabled = false;
+});
+</script>
+</body>
+</html>
