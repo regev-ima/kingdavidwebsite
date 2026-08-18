@@ -99,3 +99,21 @@ export function resolveBedConfig({ groups = [], product, variation, answers = {}
   const total = chosen.reduce((sum, c) => sum + (Number(c.value?.price) || 0), 0);
   return { ask, chosen, total };
 }
+
+/**
+ * The token that ties a bed's option lines back to the bed on a CRM document.
+ *
+ * The CRM writes a configured bed as one line per choice, each tagged with the
+ * parent bed's token, so a rep can reopen the configurator and edit it instead
+ * of hunting for stray lines. An order from the site has to carry the same
+ * marker to be editable the same way. Same `bc_` prefix as the CRM's own
+ * generator — this is a shared wire format, not a local id.
+ */
+export function genBedConfigToken() {
+  try {
+    if (typeof globalThis !== 'undefined' && globalThis.crypto?.randomUUID) {
+      return `bc_${globalThis.crypto.randomUUID()}`;
+    }
+  } catch { /* fall through */ }
+  return `bc_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+}
