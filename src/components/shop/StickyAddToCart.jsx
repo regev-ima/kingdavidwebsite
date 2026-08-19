@@ -3,12 +3,10 @@ import { ShoppingCart, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useCart } from "@/lib/CartContext";
 
 export default function StickyAddToCart({ ctaRef, product, onAddToCart, addedToCart }) {
   const [show, setShow] = useState(false);
   const navigate = useNavigate();
-  const { cartCount } = useCart();
 
   useEffect(() => {
     if (!ctaRef?.current) return;
@@ -21,7 +19,6 @@ export default function StickyAddToCart({ ctaRef, product, onAddToCart, addedToC
   }, [ctaRef]);
 
   const displayPrice = product?.sale_price || product?.price;
-  const isInCart = addedToCart || (cartCount > 0 && product);
 
   return (
     <AnimatePresence>

@@ -87,7 +87,6 @@ export default function Checkout() {
   const {
     register,
     handleSubmit,
-    getValues,
     setValue,
     watch,
     clearErrors,
