@@ -8,6 +8,23 @@ import { Search, SlidersHorizontal, X, LayoutGrid, Rows } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ProductCard from "../components/shop/ProductCard";
 import { fallbackProducts } from "@/data/fallbackProducts";
+import { Helmet } from "react-helmet-async";
+
+const SITE_URL = "https://kingdavid4u.co.il";
+
+// One line per storefront tab. Without these every category listed the same
+// site-wide description, so Google had no reason to rank "מיטות יהודיות" for
+// anything the homepage did not already say.
+const CATEGORY_SEO = {
+  "הכל": "כל המזרנים והמיטות של קינג דיויד — ייצור ישראלי, אחריות מלאה ומשלוח עד הבית.",
+  "מבצעים": "מזרנים ומיטות במבצע בקינג דיויד. מלאי מוגבל, אחריות מלאה ומשלוח עד הבית.",
+  "מזרנים זוגיים": "מזרנים זוגיים אורתופדיים בייצור ישראלי — ויסקו, לטקס וקפיצים ממוקדים, עם אחריות מלאה.",
+  "מזרני יחיד": "מזרני יחיד אורתופדיים לחדרי ילדים ונוער, בייצור ישראלי ועם אחריות מלאה.",
+  "מיטות זוגיות": "מיטות זוגיות מרופדות בייצור ישראלי, עם ארגז מצעים לבחירה ומשלוח עד הבית.",
+  "מיטות יחיד": "מיטות יחיד וספות נוער בייצור ישראלי, עם ארגז מצעים לבחירה ומשלוח עד הבית.",
+  "מיטות יהודיות": "מיטות יהודיות בהפרדה, בייצור ישראלי ובהתאמה אישית — עם ארגז מצעים לבחירה.",
+  "מיטות מעוצבות": "מיטות מעוצבות בעבודת יד, בבדים ובגוונים לבחירה, בייצור ישראלי.",
+};
 
 const categories = [
   "הכל",
@@ -137,6 +154,22 @@ export default function Shop() {
   };
 
   return (
+    <>
+      <Helmet>
+        <title>{`${activeCategory === "הכל" ? "כל המוצרים" : activeCategory} | קינג דיויד`}</title>
+        <meta
+          name="description"
+          content={CATEGORY_SEO[activeCategory] || CATEGORY_SEO["הכל"]}
+        />
+        <link
+          rel="canonical"
+          href={`${SITE_URL}/Shop${activeCategory && activeCategory !== "הכל" ? `/${encodeURIComponent(activeCategory)}` : ""}`}
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={`${activeCategory === "הכל" ? "כל המוצרים" : activeCategory} | קינג דיויד`} />
+        <meta property="og:description" content={CATEGORY_SEO[activeCategory] || CATEGORY_SEO["הכל"]} />
+        <meta property="og:locale" content="he_IL" />
+      </Helmet>
     <div className="min-h-screen">
       {/* Header */}
       <div className="relative pt-14 pb-10 md:pt-20 md:pb-14 overflow-hidden">
@@ -504,5 +537,6 @@ export default function Shop() {
         </div>
       </div>
     </div>
+    </>
   );
 }
