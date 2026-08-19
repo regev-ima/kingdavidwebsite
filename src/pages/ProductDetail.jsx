@@ -142,6 +142,60 @@ function ShareButtons({ productName }) {
   );
 }
 
+// The trust cards under the product. Static, so they live outside the
+// component; the trial card is filtered out per product below.
+const USP_CARDS = [
+                {
+                  title: "30 לילות ניסיון ללא ניילון",
+                  desc: "לא מתאים? איסוף חינם על חשבוננו.",
+                  icon: (
+                    <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
+                      <path d="M34 12c-1.2-1-2.6-1.5-4-1.7A14 14 0 0018 24a14 14 0 0016 13.9c-1.4-.3-2.8-.9-4-1.7A11 11 0 0120 24a11 11 0 0114-10.6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      <circle cx="38" cy="16" r="5" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M38 13v3l2 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M24 42c-2 0-4-1.5-4-3.5s2-3.5 4-3.5c.8 0 1.6.2 2.2.7A5 5 0 0138 38a3.5 3.5 0 010 7H24z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                    </svg>
+                  ),
+                },
+                {
+                  title: "40 שנה של ייצור ישראלי",
+                  desc: "כשאתם קונים קינג דיוויד — אתם תומכים בכלכלה הישראלית ובעובדים ישראליים.",
+                  icon: (
+                    <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
+                      <circle cx="24" cy="20" r="12" stroke="currentColor" strokeWidth="1.5"/>
+                      <circle cx="24" cy="20" r="7" stroke="currentColor" strokeWidth="1.2"/>
+                      <path d="M24 15l1.5 3 3.5.5-2.5 2.5.6 3.5L24 22.5l-3.1 2 .6-3.5-2.5-2.5 3.5-.5L24 15z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+                      <path d="M17 36l3-6 4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M31 36l-3-6-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ),
+                },
+                {
+                  title: "למעלה מ-100 דגמים",
+                  desc: "\"לכל אחד יש הקינג דיוויד שלו\" — המגוון הכי רחב בישראל.",
+                  icon: (
+                    <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
+                      <rect x="8" y="28" width="32" height="8" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+                      <rect x="10" y="20" width="28" height="8" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+                      <rect x="12" y="12" width="24" height="8" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M18 15c0 1.5 1.5 3 3 3s3-1.5 3-3" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+                      <path d="M26 15c0 1.5 1.5 3 3 3s3-1.5 3-3" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+                      <path d="M8 40h32" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeDasharray="3 3" opacity="0.4"/>
+                    </svg>
+                  ),
+                },
+                {
+                  title: "20 שנות אחריות מלאה",
+                  desc: "\"אנחנו נותנים לכם גב!\" — האחריות הכי ארוכה בשוק הישראלי.",
+                  icon: (
+                    <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
+                      <path d="M24 6l14 5v10c0 10-6 16-14 19C16 37 10 31 10 21V11l14-5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                      <path d="M18 22l4 4 8-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ),
+                },
+];
+
 export default function ProductDetail() {
   const urlParams = new URLSearchParams(window.location.search);
   const productId = urlParams.get("id");
@@ -371,6 +425,15 @@ export default function ProductDetail() {
     : 0;
 
   const isBed = product?.category?.includes("מיטות");
+
+  // The trial card only applies to products sold with a trial period, so the
+  // row can hold three cards or four. The column count follows the count that
+  // survives the filter — a fixed four-column grid left the last column empty,
+  // which in RTL pushed the three cards to the right of the page.
+  const uspCards = useMemo(
+    () => USP_CARDS.filter((item) => !(item.title?.includes("ניסיון") && !product?.has_trial_period)),
+    [product]
+  );
 
   // Replaced by <SaleCountdown endsAt={pricing.saleEndsAt} /> above —
   // it reads the real CRM sale window instead of a local 30-min gimmick.
@@ -928,60 +991,8 @@ export default function ProductDetail() {
       <FadeInSection>
         <div className="py-16 md:py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                {
-                  title: "30 לילות ניסיון ללא ניילון",
-                  desc: "לא מתאים? איסוף חינם על חשבוננו.",
-                  icon: (
-                    <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-                      <path d="M34 12c-1.2-1-2.6-1.5-4-1.7A14 14 0 0018 24a14 14 0 0016 13.9c-1.4-.3-2.8-.9-4-1.7A11 11 0 0120 24a11 11 0 0114-10.6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      <circle cx="38" cy="16" r="5" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M38 13v3l2 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M24 42c-2 0-4-1.5-4-3.5s2-3.5 4-3.5c.8 0 1.6.2 2.2.7A5 5 0 0138 38a3.5 3.5 0 010 7H24z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                    </svg>
-                  ),
-                },
-                {
-                  title: "40 שנה של ייצור ישראלי",
-                  desc: "כשאתם קונים קינג דיוויד — אתם תומכים בכלכלה הישראלית ובעובדים ישראליים.",
-                  icon: (
-                    <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-                      <circle cx="24" cy="20" r="12" stroke="currentColor" strokeWidth="1.5"/>
-                      <circle cx="24" cy="20" r="7" stroke="currentColor" strokeWidth="1.2"/>
-                      <path d="M24 15l1.5 3 3.5.5-2.5 2.5.6 3.5L24 22.5l-3.1 2 .6-3.5-2.5-2.5 3.5-.5L24 15z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-                      <path d="M17 36l3-6 4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M31 36l-3-6-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  ),
-                },
-                {
-                  title: "למעלה מ-100 דגמים",
-                  desc: "\"לכל אחד יש הקינג דיוויד שלו\" — המגוון הכי רחב בישראל.",
-                  icon: (
-                    <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-                      <rect x="8" y="28" width="32" height="8" rx="3" stroke="currentColor" strokeWidth="1.5"/>
-                      <rect x="10" y="20" width="28" height="8" rx="3" stroke="currentColor" strokeWidth="1.5"/>
-                      <rect x="12" y="12" width="24" height="8" rx="3" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M18 15c0 1.5 1.5 3 3 3s3-1.5 3-3" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-                      <path d="M26 15c0 1.5 1.5 3 3 3s3-1.5 3-3" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-                      <path d="M8 40h32" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeDasharray="3 3" opacity="0.4"/>
-                    </svg>
-                  ),
-                },
-                {
-                  title: "20 שנות אחריות מלאה",
-                  desc: "\"אנחנו נותנים לכם גב!\" — האחריות הכי ארוכה בשוק הישראלי.",
-                  icon: (
-                    <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-                      <path d="M24 6l14 5v10c0 10-6 16-14 19C16 37 10 31 10 21V11l14-5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-                      <path d="M18 22l4 4 8-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  ),
-                },
-              ]
-                .filter((item) => !(item.title?.includes("ניסיון") && !product.has_trial_period))
-                .map((item, i) => (
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${uspCards.length >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
+              {uspCards.map((item, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 16 }}

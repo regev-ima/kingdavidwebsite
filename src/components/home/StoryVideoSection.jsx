@@ -1,46 +1,23 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Play, Pause } from "lucide-react";
+import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// The Channel 2 segment, which is published on YouTube. Hosting it here instead
+// would mean an 18MB file that .gitignore already refuses to keep, pulled in
+// full by every visitor; YouTube streams it at a bitrate that suits the device.
+const YOUTUBE_ID = "VPHYv2Qc-kQ";
+
 export default function StoryVideoSection() {
-  const videoRef = useRef(null);
-  const sectionRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !hasStarted && videoRef.current) {
-          videoRef.current.play().then(() => {
-            setIsPlaying(true);
-            setHasStarted(true);
-          }).catch(() => {});
-        }
-      },
-      { threshold: 0.4 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [hasStarted]);
-
-  const togglePlay = () => {
-    if (!videoRef.current) return;
-    if (isPlaying) {
-      videoRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      videoRef.current.play();
-      setIsPlaying(true);
-    }
-  };
+  // The player is only loaded once somebody asks for it. Until then the panel
+  // is a still frame and costs ~55KB instead of a megabyte of player code, and
+  // nothing is requested from YouTube at all — so no third-party cookies are
+  // set on people who never press play.
+  const [playerLoaded, setPlayerLoaded] = useState(false);
 
   return (
-    <section ref={sectionRef} className="py-24 md:py-32">
+    <section className="py-24 md:py-32">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           {/* Text side */}
@@ -91,35 +68,44 @@ export default function StoryVideoSection() {
             <div className="absolute -inset-3 border border-primary/15 rounded-sm pointer-events-none" />
             <div className="absolute -inset-1 border border-primary/8 rounded-sm pointer-events-none" />
 
-            <div
-              className="relative rounded-sm overflow-hidden aspect-[4/3] cursor-pointer group bg-card"
-              onClick={togglePlay}
-            >
-              <video
-                ref={videoRef}
-                src="/images/general/kingdavid-tv.mp4"
-                className="w-full h-full object-cover"
-                playsInline
-                muted
-                loop
-                preload="metadata"
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-              />
+            {/* 16:9, matching the segment. The old 4:3 panel cropped the
+                picture on both sides, and would have letterboxed the embed. */}
+            <div className="relative rounded-sm overflow-hidden aspect-video bg-card">
+              {playerLoaded ? (
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${YOUTUBE_ID}?autoplay=1&rel=0&modestbranding=1`}
+                  title="קינג דיוויד — כתבה בערוץ 2"
+                  className="absolute inset-0 w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setPlayerLoaded(true)}
+                  aria-label="נגן את הכתבה בערוץ 2"
+                  className="absolute inset-0 w-full h-full cursor-pointer group"
+                >
+                  <img
+                    src="/images/general/kingdavid-tv-poster.jpg"
+                    alt="שלט המפעל של קינג דיוויד בקריית מלאכי"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    width={1280}
+                    height={720}
+                  />
 
-              <div className={`absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300 ${isPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}>
-                <div className="w-20 h-20 rounded-full border border-primary/40 flex items-center justify-center bg-background/30 backdrop-blur-sm transition-transform group-hover:scale-110">
-                  {isPlaying ? (
-                    <Pause className="w-8 h-8 text-primary" />
-                  ) : (
-                    <Play className="w-8 h-8 text-primary mr-[-2px]" />
-                  )}
-                </div>
-              </div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors duration-300 group-hover:bg-black/30">
+                    <div className="w-20 h-20 rounded-full border border-primary/40 flex items-center justify-center bg-background/30 backdrop-blur-sm transition-transform group-hover:scale-110">
+                      <Play className="w-8 h-8 text-primary mr-[-2px]" />
+                    </div>
+                  </div>
 
-              <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm border border-primary/15 rounded-sm px-3 py-1.5 text-primary/80 text-xs font-light">
-                כתבה בערוץ 2
-              </div>
+                  <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm border border-primary/15 rounded-sm px-3 py-1.5 text-primary/80 text-xs font-light">
+                    כתבה בערוץ 2
+                  </div>
+                </button>
+              )}
             </div>
           </motion.div>
         </div>
