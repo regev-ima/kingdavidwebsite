@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -51,8 +51,32 @@ function generateOrderNumber() {
 export default function Checkout() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { items, getCheckoutPayload, clearCart, orderTotal, deliveryMethod, setDeliveryMethod } = useCart();
+  const { items, getCheckoutPayload, clearCart, orderTotal, deliveryMethod, setDeliveryMethod, refreshPrices } = useCart();
   const isPickup = deliveryMethod === "pickup";
+
+  // The cart keeps the price each row was added at, so it survives a reload —
+  // but a tab left open overnight would otherwise pay yesterday's price, and a
+  // price that fell would charge more than the product page quoted. Re-priced
+  // once on the way in, and said out loud: a total that changes by itself while
+  // someone is entering their card details reads as a trick, even when the new
+  // number is the honest one.
+  useEffect(() => {
+    let cancelled = false;
+    refreshPrices().then((changed) => {
+      if (cancelled || !changed.length) return;
+      toast({
+        title: "המחירים בעגלה עודכנו",
+        description: changed
+          .map((c) => `${c.name}: ₪${c.from.toLocaleString("he-IL")} ← ₪${c.to.toLocaleString("he-IL")}`)
+          .join(" · "),
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // Once, on entering checkout — not on every cart edit made from this page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [paymentMethod, setPaymentMethod] = useState("phone");
   const [orderComplete, setOrderComplete] = useState(false);

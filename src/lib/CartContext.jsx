@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 
 const CartContext = createContext(null);
@@ -115,6 +115,12 @@ function originalPriceFromVariation(variation, fallbackProduct) {
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState(loadCart);
+  // Lets refreshPrices read the current rows without being rebuilt on every
+  // cart change, which would restart the effect that calls it.
+  const itemsRef = useRef(items);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
   const [deliveryMethod, setDeliveryMethodState] = useState(loadDeliveryMethod);
   const [shippingRules, setShippingRules] = useState([]);
 
@@ -227,6 +233,58 @@ export function CartProvider({ children }) {
       updated[index] = { ...updated[index], quantity };
       return updated;
     });
+  }, []);
+
+  /**
+   * Re-price every row against the live catalogue.
+   *
+   * A row stores the price it was added at, which is what lets the cart survive
+   * a reload — but it also means a tab left open overnight, or a phone that
+   * restored its session, checks out at yesterday's price. That cuts both ways:
+   * the customer can underpay after a rise, or be charged more than the page
+   * quoted them after a fall, which is the worse half.
+   *
+   * Returns the rows whose price moved, so the caller can say so rather than
+   * silently changing the total under someone who is about to pay it. Bed
+   * configuration and addon prices are snapshots of a choice, not of the
+   * catalogue, and are left alone.
+   */
+  const refreshPrices = useCallback(async () => {
+    let products;
+    try {
+      products = await base44.entities.Product.list();
+    } catch {
+      // Offline or the RPC is down: the stored prices are all we have, and
+      // blocking checkout over it would be worse than an old price.
+      return [];
+    }
+    const byId = new Map((products || []).map((p) => [p.id, p]));
+
+    // Worked out before setItems, not inside it. React may run an updater more
+    // than once for the same commit, and a list built in there would collect
+    // each row twice — the customer would be told about one change two times.
+    const current = itemsRef.current;
+    const next = current.map((item) => {
+      const fresh = byId.get(item.product?.id);
+      if (!fresh) return item;
+      const variation = resolveVariation(fresh, item.size);
+      const unitPrice = priceFromVariation(variation, fresh);
+      if (!unitPrice || unitPrice === item.unitPrice) return item;
+      return {
+        ...item,
+        product: fresh,
+        unitPrice,
+        originalUnitPrice: originalPriceFromVariation(variation, fresh),
+      };
+    });
+
+    const changed = next
+      .map((item, i) => ({ item, was: current[i] }))
+      .filter(({ item, was }) => item.unitPrice !== was.unitPrice)
+      .map(({ item, was }) => ({ name: item.product?.name, from: was.unitPrice, to: item.unitPrice }));
+
+    if (changed.length) setItems(next);
+    return changed;
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
@@ -355,7 +413,7 @@ export function CartProvider({ children }) {
 
   return (
     <CartContext.Provider value={{
-      items, addItem, removeItem, updateQuantity, clearCart,
+      items, addItem, removeItem, updateQuantity, clearCart, refreshPrices,
       cartTotal, cartCount, cartSavings,
       withAssembly, setAssembly,
       deliveryMethod, setDeliveryMethod,
