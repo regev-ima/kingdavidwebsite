@@ -95,9 +95,16 @@ export default function StoryVideoSection() {
               className="relative rounded-sm overflow-hidden aspect-[4/3] cursor-pointer group bg-card"
               onClick={togglePlay}
             >
+              {/* The poster is a frame from the segment itself, so the panel
+                  shows the story instead of an empty grey box before the video
+                  is ready — and still shows something when autoplay is refused
+                  (data saver, reduced motion) or the file cannot be loaded,
+                  which is exactly how this section went blank while the file
+                  was missing. */}
               <video
                 ref={videoRef}
                 src="/images/general/kingdavid-tv.mp4"
+                poster="/images/general/kingdavid-tv-poster.jpg"
                 className="w-full h-full object-cover"
                 playsInline
                 muted
