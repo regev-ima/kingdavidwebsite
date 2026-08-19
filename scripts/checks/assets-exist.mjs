@@ -9,10 +9,23 @@
  *
  * Run: npm run check:assets
  */
-import { readFileSync, existsSync } from 'node:fs';
-import { globSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 
-const files = globSync('src/**/*.{js,jsx}');
+// A hand-rolled walk rather than fs.globSync, which only exists from Node 22.
+// The check ran locally and failed in CI on Node 20 — a guard that depends on
+// the newest runtime is a guard that does not run where it matters.
+function walk(dir) {
+  const out = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walk(full));
+    else if (/\.(js|jsx)$/.test(entry.name)) out.push(full);
+  }
+  return out;
+}
+
+const files = walk('src');
 const REF = /["'`](\/(?:images|videos|assets|fonts)\/[^"'`]+)["'`]/g;
 
 const missing = [];
