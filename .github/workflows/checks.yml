@@ -1,0 +1,39 @@
+name: Checks
+
+# Lint, build and the asset guard, on every pull request.
+#
+# Until now nothing ran these automatically: a mistake was caught only if
+# somebody happened to run the command locally. That is how an unused import sat
+# on main, and how a page shipped calling useEffect without importing it —
+# builds fine, lints fine under the old config, throws in the browser.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+
+      # Errors only. The unused-variable warnings are informational and should
+      # not block a release.
+      - name: Lint
+        run: npm run lint
+
+      # An <img> pointing at a file that is not in public/ renders as a gap and
+      # says nothing, so it needs a check rather than a reviewer's eye.
+      - name: Assets exist
+        run: npm run check:assets
+
+      - name: Build
+        run: npm run build
