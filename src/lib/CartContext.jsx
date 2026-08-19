@@ -113,6 +113,35 @@ function originalPriceFromVariation(variation, fallbackProduct) {
   return Number(fallbackProduct?.price ?? fallbackProduct?.sale_price ?? 0);
 }
 
+// Per-line price helpers. They read nothing but their argument, so they live
+// at module scope: inside the component they were rebuilt on every render and
+// the memos that call them had to leave them out of their dependency arrays.
+
+// Backwards-compat: support legacy cart items that don't have `unitPrice`
+function lineUnitPrice(i) {
+  return i.unitPrice ?? i.product?.sale_price ?? i.product?.price ?? 0;
+}
+
+function lineOriginalUnitPrice(i) {
+  return i.originalUnitPrice ?? i.product?.price ?? lineUnitPrice(i);
+}
+
+// Sum of addon prices attached to a single cart row
+function addonsUnitPrice(i) {
+  return Array.isArray(i.addons)
+    ? i.addons.reduce((s, a) => s + Number(a.price || 0), 0)
+    : 0;
+}
+
+// What the bed configurator adds to one unit. Kept separate from addons
+// rather than folded in: they come from different tables and a rep reading
+// the order needs to see which is which.
+function bedConfigUnitPrice(i) {
+  return Array.isArray(i.bedConfig)
+    ? i.bedConfig.reduce((s, c) => s + Number(c.price || 0), 0)
+    : 0;
+}
+
 export function CartProvider({ children }) {
   const [items, setItems] = useState(loadCart);
   // Lets refreshPrices read the current rows without being rebuilt on every
@@ -288,27 +317,6 @@ export function CartProvider({ children }) {
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
-
-  // Backwards-compat: support legacy cart items that don't have `unitPrice`
-  const lineUnitPrice = (i) =>
-    i.unitPrice ?? i.product?.sale_price ?? i.product?.price ?? 0;
-
-  const lineOriginalUnitPrice = (i) =>
-    i.originalUnitPrice ?? i.product?.price ?? lineUnitPrice(i);
-
-  // Sum of addon prices attached to a single cart row
-  const addonsUnitPrice = (i) =>
-    Array.isArray(i.addons)
-      ? i.addons.reduce((s, a) => s + Number(a.price || 0), 0)
-      : 0;
-
-  // What the bed configurator adds to one unit. Kept separate from addons
-  // rather than folded in: they come from different tables and a rep reading
-  // the order needs to see which is which.
-  const bedConfigUnitPrice = (i) =>
-    Array.isArray(i.bedConfig)
-      ? i.bedConfig.reduce((s, c) => s + Number(c.price || 0), 0)
-      : 0;
 
   const cartTotal = useMemo(
     () =>

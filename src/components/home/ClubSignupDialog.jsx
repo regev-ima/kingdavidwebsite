@@ -52,6 +52,7 @@ export default function ClubSignupDialog({ open, onOpenChange }) {
       reset();
       onOpenChange(false);
     } catch (err) {
+      console.error("[ClubSignupDialog] signup failed:", err);
       toast({
         title: "אירעה שגיאה",
         description: "לא הצלחנו להשלים את ההרשמה. נסו שוב או פנו אלינו בטלפון.",

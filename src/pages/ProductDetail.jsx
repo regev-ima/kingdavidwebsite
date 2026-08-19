@@ -223,7 +223,10 @@ export default function ProductDetail() {
   const navigate = useNavigate();
 
   const [selectedSize, setSelectedSize] = useState("");
-  const [withStorage, setWithStorage] = useState(false); // legacy flag, still used by bed UI
+  // Legacy flag. The storage box is now a bed-config question (storage_box),
+  // so nothing on this page sets it any more — but cart, drawer and checkout
+  // still read item.withStorage, so the field keeps travelling with the line.
+  const withStorage = false;
   const [selectedAddons, setSelectedAddons] = useState(() => ({})); // { [addonId]: true }
   const [bedAnswers, setBedAnswers] = useState(() => ({})); // { [groupKey]: valueKey }
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
@@ -502,8 +505,6 @@ export default function ProductDetail() {
 
     return { canonical, description, image, price, productJsonLd, breadcrumbJsonLd };
   }, [product, productId, pricing, images]);
-
-  const isBed = product?.category?.includes("מיטות");
 
   // The trial card only applies to products sold with a trial period, so the
   // row can hold three cards or four. The column count follows the count that

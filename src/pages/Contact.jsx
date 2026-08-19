@@ -32,6 +32,7 @@ export default function Contact() {
       setSubmitted(true);
       toast({ title: "הפנייה נשלחה בהצלחה!", description: "ניצור אתכם קשר בהקדם." });
     } catch (err) {
+      console.error("[Contact] lead submission failed:", err);
       toast({
         title: "אירעה שגיאה",
         description: "לא הצלחנו לשלוח את הפנייה. נסו שוב או פנו אלינו בטלפון.",
