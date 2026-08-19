@@ -32,8 +32,26 @@ export default function HeroSection() {
         style={{ y: imageY, scale: imageScale }}
         className="absolute inset-0 will-change-transform"
       >
+        {/* The homepage's LCP element, and it is full-bleed, so a phone used to
+            pull the whole 2560px original — 716KB to paint a 640px-wide screen.
+            optimizeImage() cannot help here: it deliberately passes local paths
+            through untouched, so the sizes are pre-rendered instead.
+            fetchPriority high because the browser otherwise discovers this late
+            and deprioritises it, which is the opposite of what an LCP wants. */}
         <img
-          src="/images/general/homepage-hero.jpg"
+          src="/images/general/homepage-hero-1280.jpg"
+          srcSet={[
+            "/images/general/homepage-hero-640.jpg 640w",
+            "/images/general/homepage-hero-960.jpg 960w",
+            "/images/general/homepage-hero-1280.jpg 1280w",
+            "/images/general/homepage-hero-1920.jpg 1920w",
+            "/images/general/homepage-hero-2560.jpg 2560w",
+          ].join(", ")}
+          sizes="100vw"
+          width={2560}
+          height={1969}
+          fetchPriority="high"
+          decoding="async"
           alt="חדר שינה יוקרתי"
           className="w-full h-full object-cover"
         />

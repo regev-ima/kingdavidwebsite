@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Shield, Truck, ChevronLeft, ChevronRight, ShoppingCart, Package, Minus, Plus, RotateCcw, Moon, Layers, ArrowUpDown, MapPin, ArrowLeft, Clock, Flame } from "lucide-react";
+import { Phone, Shield, Truck, ChevronLeft, ChevronRight, ShoppingCart, Package, Minus, Plus, RotateCcw, Layers, ArrowUpDown, MapPin, ArrowLeft, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/lib/CartContext";
@@ -19,6 +19,7 @@ import HardnessScale from "@/components/shop/HardnessScale";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { priceForAddon, addonsForProduct } from "@/api/base44Client";
 import { resolveBedConfig } from "@/lib/bedOptions";
+import { Helmet } from "react-helmet-async";
 import { VAT_INCLUDED_LABEL } from "@/lib/vat";
 import { optimizeImage, optimizeSrcSet } from "@/lib/image";
 
@@ -141,6 +142,24 @@ function ShareButtons({ productName }) {
     </div>
   );
 }
+
+// Absolute origin, needed because canonical and og:image must not be relative —
+// a crawler or WhatsApp resolves them against its own host, not ours.
+const SITE_URL = "https://kingdavid4u.co.il";
+
+const absolute = (url) => {
+  if (!url) return null;
+  return /^https?:\/\//i.test(url) ? url : `${SITE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+};
+
+// Meta descriptions are cut off around 160 characters in results, so trim on a
+// word boundary rather than letting Google truncate mid-word.
+const clamp = (text, max = 155) => {
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  return cut.slice(0, cut.lastIndexOf(" ")).trimEnd() + "…";
+};
 
 // The trust cards under the product. Static, so they live outside the
 // component; the trial card is filtered out per product below.
@@ -424,6 +443,66 @@ export default function ProductDetail() {
     ? Math.round(((pricing.originalPrice - pricing.finalPrice) / pricing.originalPrice) * 100)
     : 0;
 
+  // Everything the page tells a crawler or a link preview. Built here so the
+  // markup below stays a single <Helmet> block.
+  const seo = useMemo(() => {
+    if (!product) return null;
+    const canonical = `${SITE_URL}/ProductDetail?id=${encodeURIComponent(productId || product.id)}`;
+    const price = Number(pricing?.finalPrice) || 0;
+    const image = absolute(images[0] || product.image_url);
+
+    // The catalogue copy when there is any, otherwise a sentence built from
+    // what we do know — never the site-wide description, which is what made
+    // every product look identical in search results.
+    const priceLabel = price > 0 ? `החל מ-₪${price.toLocaleString("he-IL")}` : null;
+    const copy = clamp(
+      product.description ||
+        [product.name, product.category, "משלוח עד הבית, אחריות מלאה, ייצור ישראלי."]
+          .filter(Boolean)
+          .join(" · "),
+      priceLabel ? 120 : 155
+    );
+    const description = [copy, priceLabel].filter(Boolean).join(" · ");
+
+    const productJsonLd = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: product.name,
+      description,
+      brand: { "@type": "Brand", name: "King David" },
+      category: product.category || undefined,
+      ...(image ? { image: [image] } : {}),
+      ...(product.sku ? { sku: product.sku } : {}),
+      ...(price > 0
+        ? {
+            offers: {
+              "@type": "Offer",
+              price,
+              priceCurrency: "ILS",
+              // Prices on this site include VAT, which is what a shopper in
+              // Israel is quoted and what Google expects to match the page.
+              availability: "https://schema.org/InStock",
+              url: canonical,
+              seller: { "@type": "Organization", name: "King David" },
+              ...(pricing?.saleEndsAt ? { priceValidUntil: pricing.saleEndsAt } : {}),
+            },
+          }
+        : {}),
+    };
+
+    const breadcrumbJsonLd = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "ראשי", item: `${SITE_URL}/Home` },
+        { "@type": "ListItem", position: 2, name: "חנות", item: `${SITE_URL}/Shop` },
+        { "@type": "ListItem", position: 3, name: product.name, item: canonical },
+      ],
+    };
+
+    return { canonical, description, image, price, productJsonLd, breadcrumbJsonLd };
+  }, [product, productId, pricing, images]);
+
   const isBed = product?.category?.includes("מיטות");
 
   // The trial card only applies to products sold with a trial period, so the
@@ -491,6 +570,33 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen">
+      {seo && (
+        <Helmet>
+          <title>{`${product.name} | קינג דיויד`}</title>
+          <meta name="description" content={seo.description} />
+          <link rel="canonical" href={seo.canonical} />
+
+          <meta property="og:type" content="product" />
+          <meta property="og:title" content={product.name} />
+          <meta property="og:description" content={seo.description} />
+          <meta property="og:url" content={seo.canonical} />
+          <meta property="og:locale" content="he_IL" />
+          {seo.image && <meta property="og:image" content={seo.image} />}
+          {seo.price > 0 && <meta property="product:price:amount" content={String(seo.price)} />}
+          {seo.price > 0 && <meta property="product:price:currency" content="ILS" />}
+
+          {/* Without this the card is a thumbnail beside text; with it the
+              product photo leads, which is the point of sharing a product. */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={product.name} />
+          <meta name="twitter:description" content={seo.description} />
+          {seo.image && <meta name="twitter:image" content={seo.image} />}
+
+          <script type="application/ld+json">{JSON.stringify(seo.productJsonLd)}</script>
+          <script type="application/ld+json">{JSON.stringify(seo.breadcrumbJsonLd)}</script>
+        </Helmet>
+      )}
+
       {/* Breadcrumb */}
       <div className="glass-light border-b border-white/[0.06] py-4">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center gap-2 text-sm text-muted-foreground">

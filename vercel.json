@@ -4,6 +4,17 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    {
+      "source": "/ProductDetail",
+      "destination": "/api/social-preview",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|WhatsApp|Twitterbot|Slackbot|LinkedInBot|TelegramBot|Discordbot|Pinterest|redditbot|SkypeUriPreview|vkShare|Applebot).*"
+        }
+      ]
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

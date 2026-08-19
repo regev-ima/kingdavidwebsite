@@ -118,12 +118,12 @@ function transformProduct(row) {
     final_price: withVat(v.final_price, v.vat_percent),
   }));
 
-  // A fixed-amount discount is stored net too, so it has to be grossed
-  // up alongside the prices it is subtracted from. A percentage needs
-  // no conversion.
-  const discountValue =
-    row.discount_type === 'amount' ? withVat(row.discount_value) : row.discount_value;
-  const pricedRow = { ...row, discount_value: discountValue };
+  // A ₪ discount is entered as the amount off the customer's price, so it is
+  // subtracted from the grossed-up figures as-is. It used to be grossed up
+  // first, on the assumption that it was stored net like base_price — which
+  // turned "₪500 off" in the catalogue into ₪590 off at the till. A percentage
+  // never needed converting: a share of a gross price is already gross.
+  const pricedRow = row;
 
   // Apply product-level sale, if any. This replaces each variation's
   // final_price with the discounted value so the rest of the UI keeps
@@ -182,9 +182,10 @@ function transformProduct(row) {
     category_raw: row.category,
     bed_type_raw: row.bed_type,
     sale_ends_at: row.sale_ends_at || null,
-    // Gross value, matching the VAT-inclusive prices above — pricing.js
-    // subtracts it from base_price when it recomputes the sale.
-    discount_value: discountValue,
+    // Passed through as entered. pricing.js recomputes the same sale in the
+    // UI and subtracts this from the gross base_price, so the two paths agree
+    // only while both treat it as an amount off the customer's price.
+    discount_value: row.discount_value,
   };
 }
 
@@ -247,27 +248,52 @@ async function loadAllAddons() {
  * Resolve the price a single addon charges for the currently selected variation.
  * Priority:
  *   1. product_addon_prices (variation_prices map, by variation.id)
- *   2. size_prices jsonb by variation.name ("160x200") or variation.id
+ *   2. size_prices — a per-size override
  *   3. addon.final_price
  *   4. addon.base_price
  *
  * Every one of those sources is a net CRM price, so the result is
  * grossed up here — this is the only path the UI uses to price an addon.
  */
+function sizePriceFor(sizePrices, variation) {
+  if (!sizePrices || !variation) return null;
+
+  // What the CRM actually writes: a list of {width_cm, length_cm, price} rows,
+  // matched on both dimensions. This was previously read as an object keyed by
+  // size, which an array can never satisfy — every lookup came back undefined
+  // and the price silently fell through to the addon's base, so a per-size
+  // override entered in the catalogue was never charged.
+  if (Array.isArray(sizePrices)) {
+    const hit = sizePrices.find(
+      (sp) =>
+        Number(sp?.width_cm) === Number(variation.width_cm) &&
+        Number(sp?.length_cm) === Number(variation.length_cm)
+    );
+    return hit?.price ?? null;
+  }
+
+  // Older rows stored it as an object keyed by variation id, size name, or
+  // "160x200". Still honoured so nothing that already worked stops working.
+  if (typeof sizePrices === 'object') {
+    const byId = variation.id ? sizePrices[variation.id] : undefined;
+    const byName = variation.name ? sizePrices[variation.name] : undefined;
+    const byDims =
+      variation.width_cm && variation.length_cm
+        ? sizePrices[`${variation.width_cm}x${variation.length_cm}`]
+        : undefined;
+    return byId ?? byName ?? byDims ?? null;
+  }
+  return null;
+}
+
 export function priceForAddon(addon, variation) {
   if (!addon) return 0;
   const gross = (net) => withVat(Number(net), addon.vat_percent);
   if (variation?.id && addon.variation_prices && addon.variation_prices[variation.id] != null) {
     return gross(addon.variation_prices[variation.id]);
   }
-  if (variation && addon.size_prices && typeof addon.size_prices === 'object') {
-    const byId = variation.id && addon.size_prices[variation.id];
-    const byName = variation.name && addon.size_prices[variation.name];
-    const byDims = variation.width_cm && variation.length_cm &&
-      addon.size_prices[`${variation.width_cm}x${variation.length_cm}`];
-    const match = byId ?? byName ?? byDims;
-    if (match != null) return gross(match);
-  }
+  const sized = sizePriceFor(addon.size_prices, variation);
+  if (sized != null) return gross(sized);
   return gross(addon.final_price ?? addon.base_price ?? 0);
 }
 

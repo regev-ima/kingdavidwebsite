@@ -32,6 +32,12 @@ const FORBIDDEN = ['note', 'note_type', 'addon_id', 'base_cost', 'manager_notes'
 const errors = [];
 const warnings = [];
 
+// Migrations run in order and a later one redefines what an earlier one
+// created, so only the last definition of each function is live. Findings are
+// collected per function name and overwritten as the scan advances, otherwise a
+// definition that has already been superseded keeps reporting forever.
+const latest = new Map();
+
 for (const file of readdirSync(DIR).filter((f) => f.endsWith('.sql')).sort()) {
   const sql = readFileSync(join(DIR, file), 'utf8');
   const re =
@@ -50,21 +56,32 @@ for (const file of readdirSync(DIR).filter((f) => f.endsWith('.sql')).sort()) {
         .map((s) => s.trim().split(/\s+/)[0]?.toLowerCase())
         .filter(Boolean);
 
+      const found = [];
       for (const col of declared) {
         if (FORBIDDEN.includes(col)) {
-          errors.push(`${where}: returns "${col}" — internal only, never send it to anon`);
+          found.push(['error', `${where}: returns "${col}" — internal only, never send it to anon`]);
         }
       }
       const code = body.replace(/--[^\n]*/g, ' ').replace(/'(?:[^']|'')*'/g, "''");
       if (/\bselect\s+(?:\*|[a-z_]+\.\*)/i.test(code)) {
-        errors.push(`${where}: declares columns but the body uses SELECT * — list them explicitly`);
+        found.push(['error', `${where}: declares columns but the body uses SELECT * — list them explicitly`]);
       }
+      latest.set(name, found);
     } else if (/setof\s+[a-z_.]+|^\s*public\.[a-z_]+\s*$/i.test(returns)) {
-      warnings.push(
-        `${where}: returns a whole table row (${returns.trim()}) — any column added to that table later is published automatically`,
-      );
+      latest.set(name, [
+        [
+          'warn',
+          `${where}: returns a whole table row (${returns.trim()}) — any column added to that table later is published automatically`,
+        ],
+      ]);
+    } else {
+      latest.set(name, []);
     }
   }
+}
+
+for (const found of latest.values()) {
+  for (const [kind, message] of found) (kind === 'error' ? errors : warnings).push(message);
 }
 
 for (const w of warnings) console.warn(`! ${w}`);
