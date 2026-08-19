@@ -19,8 +19,11 @@ function escapeHtml(s) {
     .replace(/'/g, "&#39;");
 }
 
-const LOGO_URL =
-  "https://media.base44.com/images/public/69ba8e801b8d893fdd14efd0/26ed85e1e_Logo-2025-03.png";
+// Absolute, and it has to stay that way: a mail client has no page to resolve
+// "/images/..." against, so a relative path here is a broken logo in every
+// order confirmation. Served from this site rather than media.base44.com, the
+// platform this site was migrated off.
+const LOGO_URL = "https://kingdavid4u.co.il/images/general/logo-full.png";
 
 export function renderOrderEmailHtml(order) {
   // Addons picked on the product page. Their price is already inside

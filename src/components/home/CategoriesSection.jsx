@@ -4,29 +4,32 @@ import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { SectionDivider } from "@/components/ui/royal-ornament";
 
+// Category art is served from this repo. It used to come from media.base44.com
+// — the platform this site was migrated off — which meant the homepage depended
+// on a host nobody here controls or pays for.
 const categories = [
   {
     title: "מזרנים זוגיים",
     description: "מגוון רחב של מזרנים זוגיים בטכנולוגיות מתקדמות",
-    image: "https://media.base44.com/images/public/69ba8e801b8d893fdd14efd0/311035b31_generated_56cfdb7e.png",
+    image: "/images/general/cat-double-mattresses.jpg",
     link: "/Shop?category=מזרנים זוגיים",
   },
   {
     title: "מזרני יחיד",
     description: "מזרנים איכותיים למיטת יחיד ומיטה וחצי",
-    image: "https://media.base44.com/images/public/69ba8e801b8d893fdd14efd0/513eac88a_generated_d22b29b4.png",
+    image: "/images/general/cat-single-mattresses.jpg",
     link: "/Shop?category=מזרני יחיד",
   },
   {
     title: "מיטות מעוצבות",
     description: "מיטות זוגיות מעוצבות בסגנונות שונים",
-    image: "https://media.base44.com/images/public/69ba8e801b8d893fdd14efd0/bffe4969c_generated_faa2ad04.png",
+    image: "/images/general/cat-designer-beds.jpg",
     link: "/Shop?category=מיטות מעוצבות",
   },
   {
     title: "מיטות יהודיות",
     description: "מיטות בהפרדה יהודית עם ארגז מצעים",
-    image: "https://media.base44.com/images/public/69ba8e801b8d893fdd14efd0/ed41318a0_generated_4e932bd8.png",
+    image: "/images/general/cat-jewish-beds.jpg",
     link: "/Shop?category=מיטות יהודיות",
   },
 ];
