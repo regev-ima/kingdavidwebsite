@@ -12,9 +12,10 @@ import DOMPurify from "dompurify";
 import LeadInlineForm from "@/components/blog/LeadInlineForm";
 import { useToast } from "@/components/ui/use-toast";
 
-const DEFAULT_OG_IMAGE =
-  "https://media.base44.com/images/public/69ba8e801b8d893fdd14efd0/26ed85e1e_Logo-2025-03.png";
 const SITE_URL = "https://kingdavid4u.co.il";
+// Absolute for the same reason as the email logo: a crawler resolves og:image
+// against its own host, not ours.
+const DEFAULT_OG_IMAGE = `${SITE_URL}/images/general/logo-full.png`;
 
 function stripHtml(html) {
   if (!html) return "";

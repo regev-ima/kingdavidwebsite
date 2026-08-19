@@ -26,11 +26,24 @@ function walk(dir) {
 }
 
 const files = walk('src');
+
+// Comment lines are dropped before matching. Prose mentioning a path — "the
+// logo at /images/..." — is not a reference, and a checker that cannot tell the
+// difference cries wolf until someone turns it off. Only whole-line comments
+// are removed, so an https:// inside real code is never mangled.
+const stripComments = (text) =>
+  text
+    .split('\n')
+    .filter((line) => {
+      const s = line.trim();
+      return !(s.startsWith('//') || s.startsWith('*') || s.startsWith('/*'));
+    })
+    .join('\n');
 const REF = /["'`](\/(?:images|videos|assets|fonts)\/[^"'`]+)["'`]/g;
 
 const missing = [];
 for (const file of files) {
-  const text = readFileSync(file, 'utf8');
+  const text = stripComments(readFileSync(file, 'utf8'));
   for (const m of text.matchAll(REF)) {
     // srcset entries carry a width descriptor — "/a.jpg 640w" — which is not
     // part of the path.
@@ -39,9 +52,31 @@ for (const file of files) {
   }
 }
 
-if (missing.length) {
-  console.error('✗ referenced but not in public/:');
-  for (const m of [...new Set(missing)]) console.error('   ' + m);
+// The site was migrated off base44, but kept loading images from its CDN —
+// including the logo in every order confirmation email. That is a live
+// dependency on a platform nobody here controls, and it fails the way the story
+// video failed: silently, whenever the far end stops answering.
+const FOREIGN = /["'`](https?:\/\/[^"'`]*base44\.com[^"'`]*)["'`]/g;
+const foreign = [];
+for (const file of [...files, 'index.html']) {
+  let text;
+  try {
+    text = stripComments(readFileSync(file, 'utf8'));
+  } catch {
+    continue;
+  }
+  for (const m of text.matchAll(FOREIGN)) foreign.push(`${file}: ${m[1]}`);
+}
+
+if (missing.length || foreign.length) {
+  if (missing.length) {
+    console.error('✗ referenced but not in public/:');
+    for (const m of [...new Set(missing)]) console.error('   ' + m);
+  }
+  if (foreign.length) {
+    console.error('✗ still loading from base44 — serve it from this repo instead:');
+    for (const f of [...new Set(foreign)]) console.error('   ' + f);
+  }
   process.exit(1);
 }
-console.log('✓ every referenced local asset exists');
+console.log('✓ every referenced local asset exists, and nothing loads from base44');
