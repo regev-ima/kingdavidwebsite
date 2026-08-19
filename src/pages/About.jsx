@@ -143,9 +143,9 @@ export default function About() {
             {[
               { src: "https://images.unsplash.com/photo-1631049552057-403cdb8f0658?w=400&q=80", alt: "תפירה ידנית" },
               { src: "https://images.unsplash.com/photo-1629140727571-9b5c6f6267b4?w=400&q=80", alt: "בד טבעי" },
-              { src: "/images/products/inspire/1695927758-scaled.jpg", alt: "מזרן אינספייר" },
+              { src: "/images/general/story-25-photo.jpeg", alt: "מזרן קינג דיוויד בייצור" },
               { src: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=400&q=80", alt: "חדר שינה יוקרתי" },
-              { src: "/images/products/elite-visco/2_final-2_1024x787.jpg", alt: "מזרן אליט" },
+              { src: "/images/general/beds-banner.jpg", alt: "מיטות קינג דיוויד" },
               { src: "https://images.unsplash.com/photo-1615874959474-d609969a20ed?w=400&q=80", alt: "מיטה מעוצבת" },
             ].map((img, i) => (
               <motion.div key={i} {...fadeIn(i * 0.05)} className="aspect-square rounded-xl overflow-hidden">
