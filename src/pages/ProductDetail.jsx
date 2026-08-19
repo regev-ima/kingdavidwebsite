@@ -18,6 +18,7 @@ import SaleCountdown from "@/components/shop/SaleCountdown";
 import HardnessScale from "@/components/shop/HardnessScale";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { priceForAddon, addonsForProduct } from "@/api/base44Client";
+import { resolveBedConfig } from "@/lib/bedOptions";
 import { VAT_INCLUDED_LABEL } from "@/lib/vat";
 import { optimizeImage, optimizeSrcSet } from "@/lib/image";
 
@@ -151,6 +152,7 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState("");
   const [withStorage, setWithStorage] = useState(false); // legacy flag, still used by bed UI
   const [selectedAddons, setSelectedAddons] = useState(() => ({})); // { [addonId]: true }
+  const [bedAnswers, setBedAnswers] = useState(() => ({})); // { [groupKey]: valueKey }
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -182,6 +184,15 @@ export default function ProductDetail() {
     () => addonsForProduct(allAddons, product || {}),
     [allAddons, product]
   );
+
+  // Bed configurator questions. Cached globally like addons — one RPC for the
+  // whole site. An empty list (no migration yet, or nothing published) simply
+  // renders no questions.
+  const { data: bedOptionGroups = [] } = useQuery({
+    queryKey: ["bed-options"],
+    queryFn: () => base44.entities.BedOption.list(),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const DEFAULT_SIZES = ["80×190", "90×190", "100×190", "120×190", "140×190", "160×190", "180×190", "200×200"];
 
@@ -337,6 +348,19 @@ export default function ProductDetail() {
     return product.variations[0];
   }, [product, selectedSize]);
 
+  // Everything the configurator decides for this bed at this size: which
+  // questions to ask, what was chosen (asked or derived from the width), and
+  // what it adds. One call, so the page, the cart and the order agree.
+  const bedConfig = useMemo(
+    () => resolveBedConfig({
+      groups: bedOptionGroups,
+      product: product || {},
+      variation: selectedVariation,
+      answers: bedAnswers,
+    }),
+    [bedOptionGroups, product, selectedVariation, bedAnswers]
+  );
+
   const pricing = useMemo(
     () => computeEffectivePrice(product || {}, selectedVariation),
     [product, selectedVariation]
@@ -362,7 +386,14 @@ export default function ProductDetail() {
         name: a.name,
         price: Number(priceForAddon(a, selectedVariation) || 0),
       }));
-    addItem(product, size, quantity, withStorage, addonsPayload);
+    const bedConfigPayload = bedConfig.chosen.map((c) => ({
+      group_key: c.group.key,
+      group_label: c.group.label,
+      value_key: c.value.key,
+      value_label: c.value.label,
+      price: Number(c.value.price) || 0,
+    }));
+    addItem(product, size, quantity, withStorage, addonsPayload, bedConfigPayload);
     setAddedToCart(true);
     // Don't reset — button stays as "checkout" permanently
   };
@@ -679,6 +710,86 @@ export default function ProductDetail() {
               </div>
             </div>
 
+            {/* Bed configurator — the questions the CRM published for the
+                storefront, minus any this bed switched off. Questions the CRM
+                marked 'auto' are never rendered: they are answered from the
+                size chosen above and only show up in the summary below, so the
+                customer is not asked something they have already told us. */}
+            {bedConfig.ask.length > 0 && (
+              <div className="mb-6 space-y-4">
+                {bedConfig.ask.map((group) => {
+                  const chosenKey = bedAnswers[group.key];
+                  return (
+                    <div key={group.id}>
+                      <label className="text-sm font-medium text-foreground/80 block mb-2">
+                        {group.label}
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {group.values.map((v) => {
+                          const active = chosenKey === v.key;
+                          return (
+                            <button
+                              key={v.id}
+                              type="button"
+                              onClick={() =>
+                                setBedAnswers((prev) => {
+                                  const next = { ...prev };
+                                  // Clicking the chosen option clears it, which is
+                                  // the only way to undo an optional extra.
+                                  if (next[group.key] === v.key) delete next[group.key];
+                                  else next[group.key] = v.key;
+                                  return next;
+                                })
+                              }
+                              className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-right min-h-[44px] ${
+                                active
+                                  ? "border-primary/60 bg-primary/[0.06] ring-1 ring-primary/20"
+                                  : "border-white/[0.08] glass hover:border-white/[0.15]"
+                              }`}
+                            >
+                              {v.image_url && (
+                                <img
+                                  src={v.image_url}
+                                  alt=""
+                                  className="w-10 h-10 rounded-lg object-cover shrink-0"
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <span className="font-medium text-foreground text-sm block truncate">
+                                  {v.label}
+                                </span>
+                                {v.price > 0 && (
+                                  <span className="text-primary text-xs font-semibold">
+                                    +₪{Number(v.price).toLocaleString()}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* What the size decided on the customer's behalf. Shown, not
+                    hidden: the price moves because of it, and an unexplained
+                    increase reads as a mistake. */}
+                {bedConfig.chosen
+                  .filter((c) => c.group.website_mode === "auto" && c.value.price > 0)
+                  .map((c) => (
+                    <p key={c.group.id} className="text-xs text-foreground/60">
+                      {c.group.label}: <span className="text-foreground/80">{c.value.label}</span>
+                      {" — "}
+                      <span className="text-primary font-semibold">
+                        ₪{Number(c.value.price).toLocaleString()}
+                      </span>
+                      {" "}(לפי המידה שנבחרה)
+                    </p>
+                  ))}
+              </div>
+            )}
+
             {/* Addons — driven by CRM product_addons (only those where
                 applicable_categories matches this product) */}
             {applicableAddons.length > 0 && (
@@ -746,7 +857,8 @@ export default function ProductDetail() {
                 applicableAddons.reduce(
                   (sum, a) => sum + (selectedAddons[a.id] ? priceForAddon(a, selectedVariation) : 0),
                   0
-                );
+                ) +
+                bedConfig.total;
               const total = perUnit * quantity;
               return (
                 <div className="mb-4 flex items-baseline justify-between pt-3 border-t border-foreground/10">

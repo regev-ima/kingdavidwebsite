@@ -149,7 +149,11 @@ export function CartProvider({ children }) {
     };
   }, []);
 
-  const addItem = useCallback((product, size, quantity = 1, withStorage = false, addons = []) => {
+  // `bedConfig` is what the bed configurator resolved for this size — the
+  // questions the customer answered plus the ones the site answered for them.
+  // It rides on the row so the cart, the order and the factory all describe the
+  // same bed; the CRM reconstructs its own line-per-choice shape from it.
+  const addItem = useCallback((product, size, quantity = 1, withStorage = false, addons = [], bedConfig = []) => {
     const variation = resolveVariation(product, size);
     const unitPrice = priceFromVariation(variation, product);
     const originalUnitPrice = originalPriceFromVariation(variation, product);
@@ -162,12 +166,29 @@ export function CartProvider({ children }) {
           price: Number(a.price || 0),
         }))
       : [];
+    const normBedConfig = Array.isArray(bedConfig)
+      ? bedConfig.map((c) => ({
+          group_key: c.group_key,
+          group_label: c.group_label,
+          value_key: c.value_key,
+          value_label: c.value_label,
+          price: Number(c.price || 0),
+        }))
+      : [];
     // Two cart rows match only if their addons are identical (ids + prices).
     const sameAddons = (a, b) => {
       if ((a?.length || 0) !== (b?.length || 0)) return false;
       const aKey = [...(a || [])].map((x) => `${x.id}:${x.price}`).sort().join("|");
       const bKey = [...(b || [])].map((x) => `${x.id}:${x.price}`).sort().join("|");
       return aKey === bKey;
+    };
+
+    // Same bed at the same size with a different box is a different purchase,
+    // so it must not merge into the existing row.
+    const sameBedConfig = (a, b) => {
+      if ((a?.length || 0) !== (b?.length || 0)) return false;
+      const key = (list) => [...(list || [])].map((x) => `${x.group_key}:${x.value_key}`).sort().join("|");
+      return key(a) === key(b);
     };
 
     setItems((prev) => {
@@ -177,7 +198,8 @@ export function CartProvider({ children }) {
           i.size === size &&
           i.withStorage === withStorage &&
           i.variationId === variationId &&
-          sameAddons(i.addons, normAddons)
+          sameAddons(i.addons, normAddons) &&
+          sameBedConfig(i.bedConfig, normBedConfig)
       );
       if (idx >= 0) {
         const updated = [...prev];
@@ -189,6 +211,7 @@ export function CartProvider({ children }) {
         unitPrice,
         originalUnitPrice,
         addons: normAddons,
+        bedConfig: normBedConfig,
       }];
     });
   }, []);
@@ -221,10 +244,18 @@ export function CartProvider({ children }) {
       ? i.addons.reduce((s, a) => s + Number(a.price || 0), 0)
       : 0;
 
+  // What the bed configurator adds to one unit. Kept separate from addons
+  // rather than folded in: they come from different tables and a rep reading
+  // the order needs to see which is which.
+  const bedConfigUnitPrice = (i) =>
+    Array.isArray(i.bedConfig)
+      ? i.bedConfig.reduce((s, c) => s + Number(c.price || 0), 0)
+      : 0;
+
   const cartTotal = useMemo(
     () =>
       items.reduce(
-        (sum, i) => sum + (lineUnitPrice(i) + addonsUnitPrice(i)) * i.quantity,
+        (sum, i) => sum + (lineUnitPrice(i) + addonsUnitPrice(i) + bedConfigUnitPrice(i)) * i.quantity,
         0
       ),
     [items]
@@ -290,6 +321,7 @@ export function CartProvider({ children }) {
     items: items.map((i) => {
       const unit = lineUnitPrice(i);
       const addonsUnit = addonsUnitPrice(i);
+      const bedUnit = bedConfigUnitPrice(i);
       return {
         productId: i.product.id,
         variationId: i.variationId || null,
@@ -302,7 +334,9 @@ export function CartProvider({ children }) {
         originalUnitPrice: lineOriginalUnitPrice(i),
         addons: Array.isArray(i.addons) ? i.addons : [],
         addonsUnitPrice: addonsUnit,
-        lineTotal: (unit + addonsUnit) * i.quantity,
+        bedConfig: Array.isArray(i.bedConfig) ? i.bedConfig : [],
+        bedConfigUnitPrice: bedUnit,
+        lineTotal: (unit + addonsUnit + bedUnit) * i.quantity,
         imageUrl: i.product?.image_url || null,
       };
     }),

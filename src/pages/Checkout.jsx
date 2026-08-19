@@ -17,7 +17,8 @@ import { buildHypIframeUrl, isHypConfigured } from "@/lib/hyp";
 import { sendOrderEmail } from "@/lib/orderEmail";
 import { base44 } from "@/api/base44Client";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import { vatPortionOf } from "@/lib/vat";
+import { VAT_PERCENT } from "@/lib/vat";
+import { genBedConfigToken } from "@/lib/bedOptions";
 
 const PAYMENT_METHODS = [
   {
@@ -280,20 +281,64 @@ export default function Checkout() {
     const payload = getCheckoutPayload();
 
     // Translate website cart -> kcrm orders.items JSONB shape.
-    const itemsJsonb = payload.items.map((item) => ({
-      product_id: item.productId,
-      variation_id: item.variationId,
-      sku: item.sku,
-      name: item.name,
-      size: item.size || null,
-      quantity: item.quantity,
-      with_storage: item.withStorage,
-      unit_price: item.unitPrice,
-      addons: item.addons || [],
-      addons_unit_price: item.addonsUnitPrice || 0,
-      line_total: item.lineTotal,
-      image_url: item.imageUrl,
-    }));
+    //
+    // Two conventions have to be honoured here, and both were being broken.
+    //
+    // PRICES ARE NET. Every price on this site is VAT-inclusive, but a CRM
+    // document line stores the pre-VAT figure and every CRM screen multiplies
+    // it back up for display. Sending gross made a website order read 18% high
+    // to the rep. Converted once, here, at the boundary.
+    //
+    // ADD-ONS ARE `selected_addons`. The CRM reads that key; the site was
+    // writing `addons`, so nothing a customer picked was visible on the order.
+    //
+    // And a configured bed is not one line. The CRM writes the bed, then a
+    // separate line per chosen option tagged with the bed's token — that is
+    // what the wizard produces, what the PDF prints and what the factory
+    // reads. Producing the same shape here means an order from the site is
+    // indistinguishable from one a rep typed, and a rep can reopen the
+    // configurator on it.
+    const toNet = (gross) => Math.round(((Number(gross) || 0) / (1 + VAT_PERCENT / 100)) * 100) / 100;
+
+    const itemsJsonb = [];
+    for (const item of payload.items) {
+      const config = Array.isArray(item.bedConfig) ? item.bedConfig : [];
+      const token = config.length ? genBedConfigToken() : null;
+      const unitNet = toNet(item.unitPrice);
+
+      itemsJsonb.push({
+        product_id: item.productId,
+        variation_id: item.variationId,
+        sku: item.sku,
+        name: item.name,
+        size: item.size || null,
+        quantity: item.quantity,
+        with_storage: item.withStorage,
+        unit_price: unitNet,
+        selected_addons: (item.addons || []).map((a) => ({ ...a, price: toNet(a.price) })),
+        total: unitNet * item.quantity,
+        image_url: item.imageUrl,
+        ...(token ? { bed_config_token: token, bed_config_fields: [] } : {}),
+      });
+
+      for (const c of config) {
+        const priceNet = toNet(c.price);
+        itemsJsonb.push({
+          product_id: '',
+          variation_id: '',
+          sku: '',
+          name: `${c.group_label} — ${c.value_label}`,
+          quantity: item.quantity,
+          unit_price: priceNet,
+          discount_percent: 0,
+          total: priceNet * item.quantity,
+          selected_addons: [],
+          bed_config_owner: token,
+          bed_config_group_key: c.group_key,
+          bed_config_value_key: c.value_key,
+        });
+      }
+    }
 
     const extras = {
       shipping: payload.shipping,
@@ -322,14 +367,16 @@ export default function Checkout() {
       apartment_number: isPickup ? null : (data.apartment || null),
       items: itemsJsonb,
       extras,
-      subtotal: payload.subtotal,
+      // Pre-VAT, to match the lines above and the CRM's own arithmetic:
+      // a document prints subtotal + VAT = total, so the VAT is the remainder
+      // rather than a second, independently rounded figure.
+      subtotal: Math.round(itemsJsonb.reduce((s, i) => s + (Number(i.total) || 0), 0) * 100) / 100,
       discount_total: 0,
-      // Every price on the site is VAT-inclusive, so the order total is
-      // gross and the VAT is the portion contained in it.
-      vat_amount: vatPortionOf(payload.total),
       total: payload.total,
       notes_sales: data.notes || null,
     };
+
+    orderRow.vat_amount = Math.round((orderRow.total - orderRow.subtotal) * 100) / 100;
 
     try {
       await base44.entities.Order.create(orderRow);
